@@ -14,10 +14,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet CSS (Mapa Ao Vivo) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet JS (Mapa Ao Vivo) -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -620,25 +616,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE MAPA AO VIVO (CLIENTE) -->
-    <div id="liveMapModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col h-[550px]">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                    <i class="fa-solid fa-map-location-dot text-primary"></i> Acompanhar Entrega em Tempo Real
-                </h3>
-                <button onclick="closeLiveMapModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 flex items-center justify-center transition cursor-pointer">
-                    <i class="fa-solid fa-xmark text-slate-700"></i>
-                </button>
-            </div>
-            <div id="mapContainer" class="flex-grow w-full z-10"></div>
-            <div class="p-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-600 flex justify-between items-center">
-                <span id="mapStatusText">Aguardando sinal do entregador...</span>
-                <button onclick="closeLiveMapModal()" class="bg-secondary text-white px-4 py-2 rounded-xl font-bold cursor-pointer">Fechar Mapa</button>
-            </div>
-        </div>
-    </div>
-
     <!-- MODAL DE CADASTRO DE GARÇOM -->
     <div id="waiterModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-4">
@@ -1002,7 +979,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE LÓGICA OTIMIZADA COM SERVICE WORKER E CORREÇÃO DEFINITIVA DE GPS -->
+    <!-- SCRIPT DE LÓGICA OTIMIZADA COM SERVICE WORKER INTEGRADO -->
     <script>
         // REGISTRO DO SERVICE WORKER PARA SUPORTE OFFLINE / PWA
         if ('serviceWorker' in navigator) {
@@ -1083,9 +1060,6 @@
         let currentChatOrderId = null;
         let currentChatStoreId = null;
 
-        // Controle de Rastreamento GPS do Entregador
-        let watchId = null;
-
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function unlockAudioContext() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1107,7 +1081,7 @@
         history.pushState({page: 'active'}, '', '');
 
         function closeAnyOpenModal() {
-            const modals = ['itemModal', 'checkoutModal', 'clientOrdersModal', 'configModal', 'itemCrudModal', 'registerStoreModal', 'tableModal', 'waiterModal', 'deliveryTeamModal', 'assignDeliveryModal', 'chatModal', 'liveMapModal'];
+            const modals = ['itemModal', 'checkoutModal', 'clientOrdersModal', 'configModal', 'itemCrudModal', 'registerStoreModal', 'tableModal', 'waiterModal', 'deliveryTeamModal', 'assignDeliveryModal', 'chatModal'];
             for (let mId of modals) {
                 const modal = document.getElementById(mId);
                 if (modal && !modal.classList.contains('hidden')) {
@@ -1328,54 +1302,13 @@
                 currentUser = { role: 'delivery', storeId, username, name: storeObj.deliveryGuys[username].name };
                 localStorage.setItem('larica_current_user', JSON.stringify(currentUser));
                 checkAuthState();
-                startDeliveryGpsTrackingBackground(storeId);
             } else {
                 alert('Entregador ou senha incorretos!');
             }
         }
 
-        function startDeliveryGpsTrackingBackground(storeId) {
-            if (!navigator.geolocation) return;
-            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-
-            watchId = navigator.geolocation.watchPosition(async (position) => {
-                if (!currentUser || currentUser.role !== 'delivery' || isSaving) return;
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-
-                try {
-                    const res = await fetch('/api/db', { cache: 'no-store' });
-                    const text = await res.text();
-                    if (!text || text === 'null' || !text.trim().startsWith('{')) return;
-
-                    const serverDb = JSON.parse(text);
-                    const storeObj = serverDb.stores[storeId];
-                    if (!storeObj || !storeObj.orders) return;
-
-                    let updated = false;
-                    storeObj.orders.forEach(o => {
-                        // SÓ atualiza coordenadas se o pedido AINDA estiver em andamento ('entrega')
-                        if (o.deliveryGuy === currentUser.name && o.status === 'entrega') {
-                            o.lat = lat;
-                            o.lng = lng;
-                            updated = true;
-                        }
-                    });
-
-                    if (updated && !isSaving) {
-                        await fetch('/api/db', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(serverDb)
-                        });
-                    }
-                } catch (e) {}
-            }, (err) => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 5000 });
-        }
-
         function logout() {
             if (confirm('Deseja realmente sair da sessão atual?')) {
-                if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
                 currentUser = null; selectedStoreId = null;
                 localStorage.removeItem('larica_current_user');
                 localStorage.removeItem('larica_selected_store');
@@ -1449,7 +1382,6 @@
                     <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white p-2 rounded-xl text-xs transition cursor-pointer"><i class="fa-solid fa-power-off"></i></button>
                 `;
                 renderDeliveryPanel();
-                startDeliveryGpsTrackingBackground(currentUser.storeId);
             }
         }
 
@@ -1677,7 +1609,7 @@
                 paymentMethod: selectedPaymentMethod,
                 changeAmount: selectedPaymentMethod === 'dinheiro' ? document.getElementById('changeAmount').value : '',
                 status: 'novos', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
-                deliveryGuy: null, messages: [], lat: null, lng: null
+                deliveryGuy: null, messages: []
             };
 
             try {
@@ -1729,101 +1661,23 @@
                         ${o.items.map(i => `<p>${i.qty}x ${i.name} — R$ ${i.total.toFixed(2)}</p>`).join('')}
                         ${o.deliveryGuy ? `<p class="text-[11px] text-purple-700 font-bold pt-1"><i class="fa-solid fa-motorcycle"></i> Entregador: ${o.deliveryGuy}</p>` : ''}
                     </div>
-                    <div class="flex flex-wrap justify-between items-center gap-2 text-xs pt-1">
+                    <div class="flex justify-between items-center text-xs pt-1">
                         <span class="font-bold text-slate-900">Total: R$ ${o.total.toFixed(2)}</span>
-                        <div class="flex gap-2">
-                            ${o.status === 'entrega' ? `
-                                <button onclick="openLiveMapModal('${o.storeId}', ${o.id})" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
-                                    <i class="fa-solid fa-map-location-dot"></i> Ver Rota Ao Vivo
-                                </button>
-                            ` : ''}
-                            <button onclick="openChatModal('${o.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
-                                <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
-                            </button>
-                        </div>
+                        <button onclick="openChatModal('${o.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
+                        </button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- MAPA AO VIVO DO ENTREGADOR (LEAFLET) ---
-        let leafletMap = null;
-        let motoboyMarker = null;
-        let mapInterval = null;
-        let activeMapOrderInfo = null;
-
-        function openLiveMapModal(storeId, orderId) {
-            activeMapOrderInfo = { storeId, orderId };
-            document.getElementById('liveMapModal').classList.remove('hidden');
-            
-            setTimeout(() => {
-                if (!leafletMap) {
-                    leafletMap = L.map('mapContainer').setView([-18.455, -44.402], 15);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 19,
-                        attribution: '© OpenStreetMap'
-                    }).addTo(leafletMap);
-                } else {
-                    leafletMap.invalidateSize();
-                }
-                updateMapPosition();
-            }, 300);
-
-            mapInterval = setInterval(updateMapPosition, 1500);
-        }
-
-        function closeLiveMapModal() {
-            document.getElementById('liveMapModal').classList.add('hidden');
-            clearInterval(mapInterval);
-            mapInterval = null;
-            activeMapOrderInfo = null;
-        }
-
-        async function updateMapPosition() {
-            if (!activeMapOrderInfo) return;
-            const { storeId, orderId } = activeMapOrderInfo;
-            
-            const storeObj = db.stores[storeId];
-            if (!storeObj) return;
-            const order = (storeObj.orders || []).find(o => o.id == orderId);
-
-            if (!order || order.status !== 'entrega') {
-                document.getElementById('mapStatusText').innerText = 'Entrega concluída ou encerrada!';
-                clearInterval(mapInterval);
-                setTimeout(() => {
-                    closeLiveMapModal();
-                    showToast('Entrega Finalizada', 'O pedido foi entregue com sucesso!');
-                    if (currentUser && currentUser.role === 'client') {
-                        openClientOrdersModal();
-                    }
-                }, 1200);
-                return;
-            }
-
-            if (order.lat && order.lng) {
-                const latLng = [order.lat, order.lng];
-                document.getElementById('mapStatusText').innerText = `Entregador em movimento (${new Date().toLocaleTimeString()})`;
-
-                if (!motoboyMarker) {
-                    motoboyMarker = L.marker(latLng).addTo(leafletMap)
-                        .bindPopup('<b>Entregador a caminho!</b>').openPopup();
-                    leafletMap.setView(latLng, 16);
-                } else {
-                    motoboyMarker.setLatLng(latLng);
-                    leafletMap.panTo(latLng);
-                }
-            } else {
-                document.getElementById('mapStatusText').innerText = 'Aguardando o sinal de GPS do entregador...';
-            }
-        }
-
-        // --- CHAT AO VIVO TRIDIRECIONAL ---
+        // --- CHAT AO VIVO TRIDIRECIONAL (Loja, Cliente, Entregador) ---
         function openChatModal(storeId, orderId) {
             currentChatStoreId = storeId;
             currentChatOrderId = orderId;
             const storeObj = db.stores[storeId];
             if (!storeObj) return;
-            const order = (storeObj.orders || []).find(o => o.id == orderId);
+            const order = (storeObj.orders || []).find(o => o.id === orderId);
             if (!order) return;
 
             document.getElementById('chatModalTitle').innerText = `Atendimento Pedido #${order.id} (${order.clientName})`;
@@ -1841,7 +1695,7 @@
             if (!currentChatStoreId || !currentChatOrderId) return;
             const storeObj = db.stores[currentChatStoreId];
             if (!storeObj) return;
-            const order = (storeObj.orders || []).find(o => o.id == currentChatOrderId);
+            const order = (storeObj.orders || []).find(o => o.id === currentChatOrderId);
             if (!order) return;
 
             const container = document.getElementById('chatMessagesContainer');
@@ -1877,7 +1731,7 @@
             } catch (e) {}
 
             const storeObj = db.stores[currentChatStoreId];
-            const order = (storeObj.orders || []).find(o => o.id == currentChatOrderId);
+            const order = (storeObj.orders || []).find(o => o.id === currentChatOrderId);
             if (!order) return;
 
             if (!order.messages) order.messages = [];
@@ -2213,7 +2067,7 @@
         function printOrderTicket(storeId, orderId) {
             const s = db.stores[storeId];
             if (!s || !s.orders) return;
-            const order = s.orders.find(o => o.id == orderId);
+            const order = s.orders.find(o => o.id === orderId);
             if (!order) return;
             printReceipt(`PEDIDO #${order.id}`, s.name, order.items, order.total, false, '', order);
         }
@@ -2381,10 +2235,10 @@
                         <div class="flex items-center justify-between pt-1">
                             <span class="font-black text-primary text-sm">Total: R$ ${o.total.toFixed(2)}</span>
                             <div class="flex gap-2">
-                                <button onclick="openChatModal('${storeId}', '${o.id}')" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
+                                <button onclick="openChatModal('${storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
                                     <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
                                 </button>
-                                <button onclick="deliveryCompleteOrder('${storeId}', '${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
+                                <button onclick="deliveryCompleteOrder('${storeId}', ${o.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
                                     <i class="fa-solid fa-check"></i> Entregue
                                 </button>
                             </div>
@@ -2395,39 +2249,15 @@
         }
 
         async function deliveryCompleteOrder(storeId, orderId) {
-            if (!confirm('Marcar este pedido como entregue/concluído?')) return;
-
-            isSaving = true; // Trava o polling temporariamente
-            try {
-                const res = await fetch('/api/db', { cache: 'no-store' });
-                const text = await res.text();
-                let serverDb = (text && text !== 'null' && text.trim().startsWith('{')) ? JSON.parse(text) : db;
-
-                const storeObj = serverDb.stores[storeId];
-                if (storeObj && storeObj.orders) {
-                    const order = storeObj.orders.find(o => o.id == orderId);
-                    if (order) {
-                        order.status = 'concluidos';
-                        order.lat = null;
-                        order.lng = null;
-
-                        await fetch('/api/db', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(serverDb)
-                        });
-
-                        db = serverDb;
-                        lastKnownSnapshot = JSON.stringify(db);
-                        renderDeliveryPanel();
-                        showToast('Entrega Concluída!', `Pedido #${orderId} finalizado com sucesso.`);
-                    }
+            if (confirm('Marcar este pedido como entregue/concluído?')) {
+                const s = db.stores[storeId];
+                const order = s.orders.find(o => o.id === orderId);
+                if (order) {
+                    order.status = 'concluidos';
+                    await saveDb();
+                    renderDeliveryPanel();
+                    showToast('Entrega Concluída!', `Pedido #${orderId} finalizado.`);
                 }
-            } catch (e) {
-                console.error('Erro ao concluir entrega:', e);
-                alert('Erro de conexão ao finalizar entrega. Tente novamente.');
-            } finally {
-                isSaving = false; // Libera as requisições
             }
         }
 
@@ -2450,7 +2280,7 @@
             const orderId = parseInt(document.getElementById('assignOrderId').value);
             const deliveryGuyName = document.getElementById('assignDeliverySelect').value;
             const s = db.stores[currentUser.storeId];
-            const order = s.orders.find(o => o.id == orderId);
+            const order = s.orders.find(o => o.id === orderId);
 
             if (order) {
                 order.deliveryGuy = deliveryGuyName;
@@ -2459,7 +2289,7 @@
                 await saveDb();
                 closeAssignDeliveryModal();
                 renderKanban();
-                showToast('Pedido Despachado!', `Atribuído a ${deliveryGuyName}. Rastreamento GPS ativo.`);
+                showToast('Pedido Despachado!', `Atribuído a ${deliveryGuyName}.`);
             }
         }
 
@@ -2503,8 +2333,8 @@
                             <p class="font-black text-primary mt-1">Total: R$ ${o.total.toFixed(2)}</p>
                         </div>
                         <div class="flex items-center gap-1.5 pt-1 border-t border-slate-100">
-                            <button onclick="printOrderTicket('${currentUser.storeId}', '${o.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer" title="Imprimir Comanda"><i class="fa-solid fa-print"></i></button>
-                            <button onclick="openChatModal('${currentUser.storeId}', '${o.id}')" class="bg-orange-50 hover:bg-orange-100 text-primary px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1" title="Chamar Cliente"><i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})</button>
+                            <button onclick="printOrderTicket('${currentUser.storeId}', ${o.id})" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer" title="Imprimir Comanda"><i class="fa-solid fa-print"></i></button>
+                            <button onclick="openChatModal('${currentUser.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1" title="Chamar Cliente"><i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})</button>
                         </div>
                         <div class="pt-1">
                             ${getKanbanActionButtons(o.id, statusKey)}
@@ -2523,13 +2353,9 @@
 
         async function advanceOrderStatus(orderId, nextStatus) {
             const s = db.stores[currentUser.storeId];
-            const order = s.orders.find(o => o.id == orderId);
+            const order = s.orders.find(o => o.id === orderId);
             if (order) {
                 order.status = nextStatus;
-                if (nextStatus === 'concluidos') {
-                    order.lat = null;
-                    order.lng = null;
-                }
                 if (nextStatus === 'preparo') {
                     printOrderTicket(currentUser.storeId, orderId);
                 }
