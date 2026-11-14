@@ -1335,39 +1335,43 @@
         }
 
         function startDeliveryGpsTrackingBackground(storeId) {
-            if (!navigator.geolocation) return;
-            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    if (!navigator.geolocation) return;
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
 
-            watchId = navigator.geolocation.watchPosition(async (position) => {
-                if (!currentUser || currentUser.role !== 'delivery') return;
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
+    watchId = navigator.geolocation.watchPosition(async (position) => {
+        if (!currentUser || currentUser.role !== 'delivery' || isSaving) return;
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
 
-                try {
-                    const res = await fetch('/api/db', { cache: 'no-store' });
-                    const serverDb = await res.json();
-                    const storeObj = serverDb.stores[storeId];
-                    if (!storeObj || !storeObj.orders) return;
+        try {
+            const res = await fetch('/api/db', { cache: 'no-store' });
+            const text = await res.text();
+            if (!text || text === 'null' || !text.trim().startsWith('{')) return;
+            
+            const serverDb = JSON.parse(text);
+            const storeObj = serverDb.stores[storeId];
+            if (!storeObj || !storeObj.orders) return;
 
-                    let updated = false;
-                    storeObj.orders.forEach(o => {
-                        if (o.deliveryGuy === currentUser.name && o.status === 'entrega') {
-                            o.lat = lat;
-                            o.lng = lng;
-                            updated = true;
-                        }
-                    });
+            let updated = false;
+            storeObj.orders.forEach(o => {
+                // Só atualiza GPS se o pedido AINDA estiver estritamente em 'entrega'
+                if (o.deliveryGuy === currentUser.name && o.status === 'entrega') {
+                    o.lat = lat;
+                    o.lng = lng;
+                    updated = true;
+                }
+            });
 
-                    if (updated) {
-                        await fetch('/api/db', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(serverDb)
-                        });
-                    }
-                } catch (e) {}
-            }, (err) => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 5000 });
-        }
+            if (updated && !isSaving) {
+                await fetch('/api/db', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serverDb)
+                });
+            }
+        } catch (e) {}
+    }, (err) => {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 5000 });
+}
 
         function logout() {
             if (confirm('Deseja realmente sair da sessão atual?')) {
@@ -2380,9 +2384,9 @@
                                 <button onclick="openChatModal('${storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
                                     <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
                                 </button>
-                                <button onclick="deliveryCompleteOrder('${storeId}', ${o.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
-                                    <i class="fa-solid fa-check"></i> Entregue
-                                </button>
+                                <button onclick="deliveryCompleteOrder('${storeId}', '${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
+    <i class="fa-solid fa-check"></i> Entregue
+</button>
                             </div>
                         </div>
                     </div>
@@ -2391,20 +2395,23 @@
         }
 
         async function deliveryCompleteOrder(storeId, orderId) {
-    if (confirm('Marcar este pedido como entregue/concluído?')) {
-        try {
-            // Busca o estado mais recente do servidor para evitar conflito
-            const res = await fetch('/api/db', { cache: 'no-store' });
-            const serverDb = await res.json();
-            const storeObj = serverDb.stores[storeId];
-            const order = (storeObj.orders || []).find(o => o.id === orderId);
+    if (!confirm('Marcar este pedido como entregue/concluído?')) return;
 
+    isSaving = true; // Trava o polling para não sobrescrever
+    try {
+        const res = await fetch('/api/db', { cache: 'no-store' });
+        const text = await res.text();
+        let serverDb = (text && text !== 'null' && text.trim().startsWith('{')) ? JSON.parse(text) : db;
+
+        const storeObj = serverDb.stores[storeId];
+        if (storeObj && storeObj.orders) {
+            // Usa == para evitar erro caso orderId venha como string ou number
+            const order = storeObj.orders.find(o => o.id == orderId);
             if (order) {
                 order.status = 'concluidos';
                 order.lat = null;
                 order.lng = null;
-                
-                // Salva no servidor
+
                 await fetch('/api/db', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2412,15 +2419,18 @@
                 });
 
                 db = serverDb;
+                lastKnownSnapshot = JSON.stringify(db);
                 renderDeliveryPanel();
                 showToast('Entrega Concluída!', `Pedido #${orderId} finalizado com sucesso.`);
             }
-        } catch (e) {
-            console.error('Erro ao concluir entrega:', e);
         }
+    } catch (e) {
+        console.error('Erro ao concluir entrega:', e);
+        alert('Erro de conexão ao finalizar entrega. Tente novamente.');
+    } finally {
+        isSaving = false; // Libera o polling
     }
 }
-
         function openAssignDeliveryModal(orderId) {
             const s = db.stores[currentUser.storeId];
             const select = document.getElementById('assignDeliverySelect');
