@@ -1,0 +1,12 @@
+{
+  "name": "larica-online-erp",
+  "version": "1.0.0",
+  "description": "Sistema ERP Multi-lojas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
