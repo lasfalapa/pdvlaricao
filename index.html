@@ -28,17 +28,31 @@
         }
     </script>
     <style>
+        /* ESTILO PROFISSIONAL DE BOBINA TÉRMICA (NOTINHA FISCAL) */
         @media print {
             body * { visibility: hidden !important; }
             #printArea, #printArea * { visibility: visible !important; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white; color: black; }
+            #printArea { 
+                position: absolute !important; 
+                left: 0 !important; 
+                top: 0 !important; 
+                width: 80mm !important; 
+                max-width: 80mm !important; 
+                display: block !important; 
+                background: white !important; 
+                color: black !important; 
+                font-family: 'Courier New', Courier, monospace !important;
+                font-size: 11px !important;
+                padding: 5mm !important;
+                margin: 0 !important;
+            }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-primary selection:text-white" onclick="unlockAudioContext()">
 
-    <!-- ÁREA DE IMPRESSÃO TÉRMICA VISÍVEL APENAS NA HORA DE IMPRIMIR -->
-    <div id="printArea" class="hidden p-4 font-mono text-xs bg-white text-black"></div>
+    <!-- ÁREA DE IMPRESSÃO TÉRMICA (NOTINHA FISCAL) -->
+    <div id="printArea" class="hidden"></div>
 
     <!-- NOTIFICAÇÃO TOAST EM TEMPO REAL -->
     <div id="realtimeToast" class="fixed top-20 right-4 z-[70] max-w-sm bg-secondary text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 transform translate-x-[150%] transition-transform duration-300">
@@ -131,7 +145,7 @@
             <div id="authStoreBox" class="space-y-4 hidden">
                 <div class="bg-orange-50 border border-orange-200 p-3 rounded-2xl text-[11px] text-orange-800">
                     <p class="font-bold mb-0.5"><i class="fa-solid fa-circle-info"></i> Painel Administrativo da Loja</p>
-                    Use usuário <b>burguer</b> ou <b>pizza</b> (senha <b>1234</b>) ou cadastre nova.
+                    Use usuário <b>burguer</b> (senha <b>1234</b>) ou cadastre nova.
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Usuário da Loja (ID)</label>
@@ -259,7 +273,7 @@
                 </div>
             </div>
 
-            <!-- Abas do Painel da Loja (JSON Oculto) -->
+            <!-- Abas do Painel da Loja -->
             <div class="flex overflow-x-auto border-b border-slate-200 gap-6">
                 <button onclick="switchStoreTab('kanban')" id="storeTabKanban" class="pb-3 font-bold text-sm border-b-2 border-primary text-primary transition flex items-center gap-2 whitespace-nowrap cursor-pointer">
                     <i class="fa-solid fa-columns"></i> KDS / Delivery <span id="badgeNewOrdersCount" class="bg-primary text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
@@ -698,7 +712,7 @@
                         <button type="button" onclick="setPaymentMethod('pix')" id="payBtn_pix" class="p-3 rounded-2xl border-2 text-center transition font-bold text-xs flex flex-col items-center gap-1 bg-orange-50 border-primary text-primary shadow-sm cursor-pointer">
                             <i class="fa-solid fa-qrcode text-base"></i> PIX
                         </button>
-                        <button type="button" onclick="setPaymentMethod('cartao_entrega')" id="payBtn_cartao_entrega" class="p-3 rounded-2xl border-2 text-center transition font-bold text-xs flex flex-col items-center gap-1 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer">
+                        <button type="button" onclick="setPaymentMethod('cartao')" id="payBtn_cartao" class="p-3 rounded-2xl border-2 text-center transition font-bold text-xs flex flex-col items-center gap-1 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer">
                             <i class="fa-solid fa-credit-card text-base"></i> Cartão
                         </button>
                         <button type="button" onclick="setPaymentMethod('dinheiro')" id="payBtn_dinheiro" class="p-3 rounded-2xl border-2 text-center transition font-bold text-xs flex flex-col items-center gap-1 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer">
@@ -979,7 +993,7 @@
 
         function setPaymentMethod(method) {
             selectedPaymentMethod = method;
-            ['pix', 'cartao_entrega', 'dinheiro'].forEach(m => {
+            ['pix', 'cartao', 'dinheiro'].forEach(m => {
                 const btn = document.getElementById(`payBtn_${m}`);
                 if (btn) {
                     btn.className = m === method ? "p-3 rounded-2xl border-2 text-center transition font-bold text-xs flex flex-col items-center gap-1 bg-orange-50 border-primary text-primary shadow-sm cursor-pointer" : "p-3 rounded-2xl border-2 text-center transition font-bold text-xs flex flex-col items-center gap-1 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer";
@@ -1053,7 +1067,6 @@
             const newDbString = JSON.stringify(newDb);
             if (oldDbString === newDbString) return;
 
-            // Detecção de novo pedido para a loja
             if (currentUser && currentUser.role === 'store') {
                 const storeId = currentUser.storeId;
                 const oldOrders = (db.stores[storeId] && db.stores[storeId].orders) || [];
@@ -1069,7 +1082,6 @@
             db = newDb;
             lastKnownSnapshot = newDbString;
 
-            // Re-renderização dinâmica da tela atual
             if (!currentUser) return;
             if (currentUser.role === 'store') {
                 renderStorePanel();
@@ -1299,7 +1311,7 @@
         function updateClientOrdersBadge() {
             if (!selectedStoreId) return;
             const s = db.stores[selectedStoreId];
-            const activeCount = (s.orders || []).filter(o => o.clientName === currentUser.name && o.status !== 'concluidos').length;
+            const activeCount = (s.orders || []).filter(o => o.clientPhone === currentUser.phone && o.status !== 'concluidos').length;
             const badge = document.getElementById('clientActiveOrdersBadge');
             if (activeCount > 0) { badge.innerText = activeCount; badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); }
         }
@@ -1488,7 +1500,7 @@
             Object.keys(db.stores).forEach(sId => {
                 const storeObj = db.stores[sId];
                 if (storeObj.orders) {
-                    storeObj.orders.forEach(o => { if (o.clientName === currentUser.name) allMyOrders.push({ ...o, storeName: storeObj.name, storeId: sId }); });
+                    storeObj.orders.forEach(o => { if (o.clientPhone === currentUser.phone) allMyOrders.push({ ...o, storeName: storeObj.name, storeId: sId }); });
                 }
             });
             if (allMyOrders.length === 0) { container.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">Nenhum pedido recente.</p>`; return; }
@@ -1513,7 +1525,7 @@
             `).join('');
         }
 
-        // --- CHAT AO VIVO ---
+        // --- CHAT AO VIVO CORRIGIDO ---
         function openChatModal(storeId, orderId) {
             currentChatStoreId = storeId;
             currentChatOrderId = orderId;
@@ -1522,7 +1534,7 @@
             const order = (storeObj.orders || []).find(o => o.id === orderId);
             if (!order) return;
 
-            document.getElementById('chatModalTitle').innerText = `Atendimento Pedido #${order.id} (${storeObj.name})`;
+            document.getElementById('chatModalTitle').innerText = `Atendimento Pedido #${order.id} (${order.clientName})`;
             document.getElementById('chatModal').classList.remove('hidden');
             renderChatMessages();
         }
@@ -1542,19 +1554,22 @@
 
             const container = document.getElementById('chatMessagesContainer');
             if (!order.messages || order.messages.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Nenhuma mensagem ainda.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Nenhuma mensagem ainda. Inicie a conversa abaixo.</p>`;
                 return;
             }
 
-            container.innerHTML = order.messages.map(m => `
-                <div class="flex flex-col ${m.sender === currentUser.role ? 'items-end' : 'items-start'}">
-                    <div class="max-w-[80%] p-3 rounded-2xl text-xs ${m.sender === currentUser.role ? 'bg-primary text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'}">
-                        <p class="font-bold text-[10px] mb-0.5 opacity-80">${m.senderName}</p>
-                        <p>${m.text}</p>
+            container.innerHTML = order.messages.map(m => {
+                const isMe = m.sender === currentUser.role;
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <div class="max-w-[80%] p-3 rounded-2xl text-xs ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'}">
+                            <p class="font-bold text-[10px] mb-0.5 opacity-80">${m.senderName}</p>
+                            <p>${m.text}</p>
+                        </div>
+                        <span class="text-[9px] text-slate-400 mt-1">${m.time}</span>
                     </div>
-                    <span class="text-[9px] text-slate-400 mt-1">${m.time}</span>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             container.scrollTop = container.scrollHeight;
         }
 
@@ -1576,7 +1591,7 @@
             if (!order.messages) order.messages = [];
             order.messages.push({
                 sender: currentUser.role,
-                senderName: currentUser.name,
+                senderName: currentUser.role === 'store' ? storeObj.name : currentUser.name,
                 text: text,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
@@ -1860,27 +1875,51 @@
             showToast('Venda Concluída!', `Cupom gerado com sucesso.`);
         }
 
-        // IMPRESSÃO ROBUSTA CORRIGIDA (SEM TELA EM BRANCO)
-        function printReceipt(title, storeName, items, total, isKitchen = false, waiterName = '') {
+        // IMPRESSÃO TÉRMICA PADRÃO NOTINHA FISCAL (CORRIGIDA)
+        function printReceipt(title, storeName, items, total, isKitchen = false, waiterName = '', orderDetails = null) {
             const printArea = document.getElementById('printArea');
+            let paymentInfo = '';
+            if (orderDetails) {
+                const payName = orderDetails.paymentMethod === 'pix' ? 'PIX' : (orderDetails.paymentMethod === 'cartao' ? 'Cartão' : 'Dinheiro');
+                paymentInfo = `<p style="margin: 2px 0;">Pagamento: <b>${payName}</b></p>`;
+                if (orderDetails.changeAmount) {
+                    paymentInfo += `<p style="margin: 2px 0;">Troco para: <b>R$ ${orderDetails.changeAmount}</b></p>`;
+                }
+                paymentInfo += `<p style="margin: 2px 0;">Tipo: <b>${orderDetails.deliveryType === 'delivery' ? 'Entrega em Casa' : 'Retirada no Balcão'}</b></p>`;
+                if (orderDetails.address) {
+                    paymentInfo += `<p style="margin: 2px 0; font-size: 10px;">Endereço: ${orderDetails.address}</p>`;
+                }
+            }
+
             printArea.innerHTML = `
-                <div style="font-family: monospace; width: 100%; max-width: 300px; margin: auto; padding: 10px; color: black; background: white;">
-                    <h3 style="text-align: center; margin: 0 0 5px 0;"><b>${storeName}</b></h3>
-                    <p style="text-align: center; margin: 0 0 5px 0; font-weight: bold;">${title}</p>
-                    ${waiterName ? `<p style="margin: 0 0 3px 0;">Garçom: <b>${waiterName}</b></p>` : ''}
-                    <p style="margin: 0 0 8px 0; font-size: 10px;">Data: ${new Date().toLocaleString()}</p>
-                    <hr style="border: dashed 1px black; margin: 5px 0;"/>
-                    <div style="text-align: left;">
-                        ${items.map(i => `<div style="margin-bottom: 4px;"><b>${i.qty}x</b> ${i.name} ${i.obs ? `<br><small style="padding-left: 10px;">Obs: ${i.obs}</small>` : ''} ${!isKitchen ? `<span style="float: right;">R$ ${i.total.toFixed(2)}</span>` : ''}</div>`).join('')}
+                <div style="font-family: 'Courier New', Courier, monospace; width: 100%; max-width: 80mm; margin: 0 auto; padding: 5px; color: black; background: white; font-size: 12px; line-height: 1.2;">
+                    <div style="text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 2px;">${storeName}</div>
+                    <div style="text-align: center; font-weight: bold; margin-bottom: 5px; border-bottom: 1px dashed black; padding-bottom: 3px;">${title}</div>
+                    ${waiterName ? `<p style="margin: 2px 0;">Garçom: <b>${waiterName}</b></p>` : ''}
+                    ${orderDetails ? `<p style="margin: 2px 0;">Cliente: <b>${orderDetails.clientName}</b> (${orderDetails.clientPhone})</p>` : ''}
+                    <p style="margin: 2px 0; font-size: 10px;">Data: ${new Date().toLocaleString()}</p>
+                    ${paymentInfo}
+                    <div style="border-top: 1px dashed black; margin: 5px 0; padding-top: 5px;">
+                        ${items.map(i => `<div style="margin-bottom: 4px;"><b>${i.qty}x</b> ${i.name} ${i.obs ? `<br><small style="padding-left: 10px; font-size: 10px;">Obs: ${i.obs}</small>` : ''} ${!isKitchen ? `<span style="float: right;">R$ ${i.total.toFixed(2)}</span>` : ''}</div>`).join('')}
                     </div>
-                    <hr style="border: dashed 1px black; margin: 5px 0;"/>
-                    ${!isKitchen ? `<h3 style="text-align: right; margin: 5px 0;">TOTAL: R$ ${total.toFixed(2)}</h3>` : ''}
-                    <p style="text-align: center; margin-top: 10px; font-size: 10px;">LaricaOnline - ERP</p>
+                    <div style="border-top: 1px dashed black; margin-top: 5px; padding-top: 5px;">
+                        ${orderDetails ? `<div style="margin-bottom: 2px;">Subtotal: R$ ${orderDetails.subtotal.toFixed(2)}</div><div style="margin-bottom: 2px;">Taxa Entrega: R$ ${orderDetails.fee.toFixed(2)}</div>` : ''}
+                        ${!isKitchen ? `<div style="font-size: 14px; font-weight: bold; text-align: right; margin-top: 5px;">TOTAL: R$ ${total.toFixed(2)}</div>` : ''}
+                    </div>
+                    <div style="text-align: center; margin-top: 12px; font-size: 10px; border-top: 1px dotted black; pt: 5px;">LaricaOnline - ERP Multi-lojas</div>
                 </div>
             `;
             setTimeout(() => {
                 window.print();
             }, 300);
+        }
+
+        function printOrderTicket(storeId, orderId) {
+            const s = db.stores[storeId];
+            if (!s || !s.orders) return;
+            const order = s.orders.find(o => o.id === orderId);
+            if (!order) return;
+            printReceipt(`PEDIDO #${order.id}`, s.name, order.items, order.total, false, '', order);
         }
 
         function renderReports() {
@@ -1984,25 +2023,34 @@
 
         function renderKanbanColumn(orders, statusKey) {
             if (orders.length === 0) return `<div class="text-center py-8 text-slate-400 text-xs">Nenhum pedido</div>`;
-            return orders.map(o => `
-                <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
-                    <div class="flex justify-between items-center"><span class="font-extrabold text-slate-900 text-xs">#${o.id} • ${o.clientName}</span><span class="text-[10px] text-slate-400">${o.time}</span></div>
-                    <div class="text-[11px] text-slate-600 space-y-0.5 border-t border-b border-slate-100 py-1.5">
-                        ${o.items.map(i => `<p><b>${i.qty}x</b> ${i.name} ${i.obs ? `(${i.obs})` : ''}</p>`).join('')}
+            return orders.map(o => {
+                const payName = o.paymentMethod === 'pix' ? 'PIX' : (o.paymentMethod === 'cartao' ? 'Cartão' : 'Dinheiro');
+                const changeText = o.changeAmount ? ` (Troco para R$ ${o.changeAmount})` : '';
+                return `
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5">
+                        <div class="flex justify-between items-center"><span class="font-extrabold text-slate-900 text-xs">#${o.id} • ${o.clientName}</span><span class="text-[10px] text-slate-400">${o.time}</span></div>
+                        <div class="text-[11px] text-slate-600 space-y-0.5 border-t border-b border-slate-100 py-1.5">
+                            ${o.items.map(i => `<p><b>${i.qty}x</b> ${i.name} ${i.obs ? `(${i.obs})` : ''}</p>`).join('')}
+                        </div>
+                        <div class="text-xs text-slate-700 space-y-0.5">
+                            <p class="font-semibold">Endereço: ${o.address}</p>
+                            <p class="font-semibold text-orange-700">Pagamento: <b>${payName}</b>${changeText}</p>
+                            <p class="font-black text-primary mt-1">Total: R$ ${o.total.toFixed(2)}</p>
+                        </div>
+                        <div class="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                            <button onclick="printOrderTicket('${currentUser.storeId}', ${o.id})" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer" title="Imprimir Comanda"><i class="fa-solid fa-print"></i></button>
+                            <button onclick="openChatModal('${currentUser.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1" title="Chamar Cliente"><i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})</button>
+                        </div>
+                        <div class="pt-1">
+                            ${getKanbanActionButtons(o.id, statusKey)}
+                        </div>
                     </div>
-                    <div class="text-xs text-slate-700">
-                        <p class="font-semibold">Endereço: ${o.address}</p>
-                        <p class="font-black text-primary mt-1">Total: R$ ${o.total.toFixed(2)}</p>
-                    </div>
-                    <div class="flex gap-2 pt-1 border-t border-slate-100">
-                        ${getKanbanActionButtons(o.id, statusKey)}
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function getKanbanActionButtons(orderId, status) {
-            if (status === 'novos') return `<button onclick="advanceOrderStatus(${orderId}, 'preparo')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">Aceitar Pedido</button>`;
+            if (status === 'novos') return `<button onclick="advanceOrderStatus(${orderId}, 'preparo')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-check"></i> Aceitar Pedido & Imprimir</button>`;
             if (status === 'preparo') return `<button onclick="advanceOrderStatus(${orderId}, 'entrega')" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">Despachar Entrega</button>`;
             if (status === 'entrega') return `<button onclick="advanceOrderStatus(${orderId}, 'concluidos')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">Concluir Pedido</button>`;
             return '';
@@ -2013,6 +2061,9 @@
             const order = s.orders.find(o => o.id === orderId);
             if (order) {
                 order.status = nextStatus;
+                if (nextStatus === 'preparo') {
+                    printOrderTicket(currentUser.storeId, orderId);
+                }
                 await saveDb();
                 renderKanban();
             }
