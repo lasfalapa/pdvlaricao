@@ -29,15 +29,15 @@
     </script>
     <style>
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+            body * { visibility: hidden !important; }
+            #printArea, #printArea * { visibility: visible !important; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white; color: black; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-primary selection:text-white" onclick="unlockAudioContext()">
 
-    <!-- ÁREA DE IMPRESSÃO TÉRMICA OCULTA -->
+    <!-- ÁREA DE IMPRESSÃO TÉRMICA VISÍVEL APENAS NA HORA DE IMPRIMIR -->
     <div id="printArea" class="hidden p-4 font-mono text-xs bg-white text-black"></div>
 
     <!-- NOTIFICAÇÃO TOAST EM TEMPO REAL -->
@@ -196,8 +196,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Grid Compacto de Lojas Lado a Lado -->
             <div id="storesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
         </div>
 
@@ -261,7 +259,7 @@
                 </div>
             </div>
 
-            <!-- Abas do Painel da Loja -->
+            <!-- Abas do Painel da Loja (JSON Oculto) -->
             <div class="flex overflow-x-auto border-b border-slate-200 gap-6">
                 <button onclick="switchStoreTab('kanban')" id="storeTabKanban" class="pb-3 font-bold text-sm border-b-2 border-primary text-primary transition flex items-center gap-2 whitespace-nowrap cursor-pointer">
                     <i class="fa-solid fa-columns"></i> KDS / Delivery <span id="badgeNewOrdersCount" class="bg-primary text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
@@ -280,9 +278,6 @@
                 </button>
                 <button onclick="switchStoreTab('reports')" id="storeTabReports" class="pb-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition flex items-center gap-2 whitespace-nowrap cursor-pointer">
                     <i class="fa-solid fa-chart-line"></i> Relatórios
-                </button>
-                <button onclick="switchStoreTab('json')" id="storeTabJson" class="pb-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition flex items-center gap-2 whitespace-nowrap cursor-pointer">
-                    <i class="fa-solid fa-database"></i> JSON Global
                 </button>
             </div>
 
@@ -455,25 +450,6 @@
                         <div id="reportSalesList" class="space-y-2 max-h-80 overflow-y-auto"></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Banco JSON -->
-            <div id="storeContentJson" class="hidden space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-slate-900">Visualização e Controle do JSON Global</h3>
-                    <div class="flex gap-2">
-                        <button onclick="resetAllDatabase()" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-                            <i class="fa-solid fa-rotate-left"></i> Zerar Tudo
-                        </button>
-                        <button onclick="exportJsonFile()" class="bg-secondary text-white px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-                            <i class="fa-solid fa-download"></i> Baixar Backup (.json)
-                        </button>
-                    </div>
-                </div>
-                <textarea id="jsonTextArea" class="w-full h-96 font-mono text-xs p-4 rounded-2xl bg-slate-900 text-emerald-400 border border-slate-800 focus:outline-none"></textarea>
-                <button onclick="saveJsonFromText()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl text-xs transition cursor-pointer">
-                    Aplicar Alterações do JSON
-                </button>
             </div>
         </div>
 
@@ -787,9 +763,7 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
             <div id="chatMessagesContainer" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50"></div>
-
             <div class="p-3 bg-white border-t border-slate-200 flex gap-2">
                 <input type="text" id="chatInputMessage" onkeypress="handleChatKeyPress(event)" placeholder="Digite sua mensagem..." class="flex-grow px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
                 <button onclick="sendChatMessage()" class="bg-primary hover:bg-primaryDark text-white px-5 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer">
@@ -889,7 +863,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE LÓGICA ERP COM SINCRONIZAÇÃO EM TEMPO REAL RESTAURADA -->
+    <!-- SCRIPT DE LÓGICA OTIMIZADA E CORRIGIDA -->
     <script>
         let db = {
             stores: {
@@ -919,7 +893,7 @@
 
         async function loadInitialDbFromServer() {
             try {
-                const res = await fetch('/api/db');
+                const res = await fetch('/api/db', { cache: 'no-store' });
                 const text = await res.text();
                 if (text && text !== 'null' && text.trim().startsWith('{')) {
                     const parsed = JSON.parse(text);
@@ -927,7 +901,6 @@
                     lastKnownSnapshot = text;
                 }
             } catch (e) {}
-            updateJsonView();
             checkAuthState();
         }
 
@@ -935,7 +908,6 @@
             isSaving = true;
             const serialized = JSON.stringify(db);
             lastKnownSnapshot = serialized;
-            updateJsonView();
             try {
                 await fetch('/api/db', {
                     method: 'POST',
@@ -962,12 +934,9 @@
         let currentChatOrderId = null;
         let currentChatStoreId = null;
 
-        // Desbloqueio do AudioContext do Navegador no primeiro clique
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function unlockAudioContext() {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
         window.addEventListener('popstate', (event) => {
@@ -1066,33 +1035,6 @@
             }
         }
 
-        function playSound(type) {
-            if (!audioEnabled) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            if (type === 'new_order') {
-                playHighBell();
-                return;
-            } else if (type === 'status_change') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.setValueAtTime(659.25, now + 0.12);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-            } else if (type === 'message') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(784, now);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-            }
-            osc.start(now); osc.stop(now + 0.3);
-        }
-
         function toggleAudio() {
             audioEnabled = !audioEnabled;
             const btn = document.getElementById('btnAudio');
@@ -1104,38 +1046,38 @@
             }
         }
 
-        // SINCRONIZAÇÃO EM TEMPO REAL ATIVA (POLLING 1.5s COM DETECÇÃO DE MUDANÇA)
-        function syncFromServerData(rawValue) {
-            if (!rawValue || rawValue === lastKnownSnapshot) return;
-            const oldDb = db;
-            const newDb = JSON.parse(rawValue);
-            if (!newDb.stores) return;
-            db = newDb;
-            lastKnownSnapshot = rawValue;
+        // SINCRONIZAÇÃO EM TEMPO REAL ROBUSTA
+        function applyServerUpdates(newDb) {
+            if (!newDb || !newDb.stores) return;
+            const oldDbString = JSON.stringify(db);
+            const newDbString = JSON.stringify(newDb);
+            if (oldDbString === newDbString) return;
 
-            if (!currentUser) return;
-
-            if (currentUser.role === 'store') {
+            // Detecção de novo pedido para a loja
+            if (currentUser && currentUser.role === 'store') {
                 const storeId = currentUser.storeId;
-                const oldStoreOrders = (oldDb.stores[storeId] && oldDb.stores[storeId].orders) || [];
-                const newStoreObj = db.stores[storeId];
-                if (newStoreObj) {
-                    const newStoreOrders = newStoreObj.orders || [];
-                    const oldNovosIds = oldStoreOrders.filter(o => o.status === 'novos').map(o => o.id);
-                    const newNovos = newStoreOrders.filter(o => o.status === 'novos');
-                    if (newNovos.some(o => !oldNovosIds.includes(o.id))) {
-                        playSound('new_order');
-                        showToast('NOVO PEDIDO!', `Há um novo pedido no painel!`);
-                    }
-                    renderStorePanel();
+                const oldOrders = (db.stores[storeId] && db.stores[storeId].orders) || [];
+                const newOrders = (newDb.stores[storeId] && newDb.stores[storeId].orders) || [];
+                const oldNovosCount = oldOrders.filter(o => o.status === 'novos').length;
+                const newNovosCount = newOrders.filter(o => o.status === 'novos').length;
+                if (newNovosCount > oldNovosCount) {
+                    playHighBell();
+                    showToast('NOVO PEDIDO!', `Há um novo pedido pendente no painel.`);
                 }
+            }
+
+            db = newDb;
+            lastKnownSnapshot = newDbString;
+
+            // Re-renderização dinâmica da tela atual
+            if (!currentUser) return;
+            if (currentUser.role === 'store') {
+                renderStorePanel();
             } else if (currentUser.role === 'client') {
                 if (selectedStoreId && db.stores[selectedStoreId]) {
                     renderStoreHeader();
                     renderCatalog();
                     updateClientOrdersBadge();
-
-                    // Atualiza modal de pedidos ao vivo se estiver aberto
                     const ordersModal = document.getElementById('clientOrdersModal');
                     if (ordersModal && !ordersModal.classList.contains('hidden')) {
                         renderClientOrdersList();
@@ -1147,22 +1089,24 @@
                 renderWaiterTables();
             }
 
-            // Atualiza chat ao vivo se o modal estiver aberto
             const chatModal = document.getElementById('chatModal');
             if (chatModal && !chatModal.classList.contains('hidden') && currentChatStoreId && currentChatOrderId) {
                 renderChatMessages();
             }
 
-            updateJsonView();
+            const tableModal = document.getElementById('tableModal');
+            if (tableModal && !tableModal.classList.contains('hidden') && activeTableNumber !== null) {
+                renderTableModalConsumption();
+            }
         }
 
         setInterval(async () => {
             if (isSaving) return;
             try {
-                const res = await fetch('/api/db');
+                const res = await fetch('/api/db', { cache: 'no-store' });
                 const text = await res.text();
-                if (text && text !== 'null' && text !== lastKnownSnapshot && text.trim().startsWith('{')) {
-                    syncFromServerData(text);
+                if (text && text !== 'null' && text.trim().startsWith('{')) {
+                    applyServerUpdates(JSON.parse(text));
                 }
             } catch (e) {}
         }, 1500);
@@ -1512,7 +1456,7 @@
             };
 
             try {
-                const res = await fetch('/api/db');
+                const res = await fetch('/api/db', { cache: 'no-store' });
                 const text = await res.text();
                 if (text && text !== 'null' && text.trim().startsWith('{')) db = JSON.parse(text);
             } catch (e) {}
@@ -1620,7 +1564,7 @@
             if (!text || !currentChatOrderId || !currentChatStoreId) return;
 
             try {
-                const res = await fetch('/api/db');
+                const res = await fetch('/api/db', { cache: 'no-store' });
                 const serverText = await res.text();
                 if (serverText && serverText !== 'null' && serverText.trim().startsWith('{')) db = JSON.parse(serverText);
             } catch (e) {}
@@ -1673,7 +1617,7 @@
         }
 
         function switchStoreTab(tab) {
-            ['Kanban', 'Tables', 'Pdv', 'Waiters', 'Menu', 'Reports', 'Json'].forEach(t => {
+            ['Kanban', 'Tables', 'Pdv', 'Waiters', 'Menu', 'Reports'].forEach(t => {
                 document.getElementById(`storeTab${t}`).className = t.toLowerCase() === tab.toLowerCase() ? "pb-3 font-bold text-sm border-b-2 border-primary text-primary transition flex items-center gap-2 whitespace-nowrap cursor-pointer" : "pb-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition flex items-center gap-2 whitespace-nowrap cursor-pointer";
                 document.getElementById(`storeContent${t}`).classList.toggle('hidden', t.toLowerCase() !== tab.toLowerCase());
             });
@@ -1838,7 +1782,9 @@
             const s = db.stores[activeTableStoreId];
             const tableData = s.tables && s.tables[activeTableNumber];
             if (!tableData || !tableData.items || tableData.items.length === 0) { alert('Mesa sem itens.'); return; }
-            printReceipt(`PEDIDO COZINHA - MESA ${activeTableNumber}`, s.name, tableData.items, 0, true);
+            
+            const waiterName = currentUser.role === 'waiter' ? currentUser.name : 'Atendimento Loja';
+            printReceipt(`PEDIDO COZINHA - MESA ${activeTableNumber}`, s.name, tableData.items, 0, true, waiterName);
         }
 
         function populatePdvSelect() {
@@ -1914,23 +1860,27 @@
             showToast('Venda Concluída!', `Cupom gerado com sucesso.`);
         }
 
-        function printReceipt(title, storeName, items, total, isKitchen = false) {
+        // IMPRESSÃO ROBUSTA CORRIGIDA (SEM TELA EM BRANCO)
+        function printReceipt(title, storeName, items, total, isKitchen = false, waiterName = '') {
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = `
-                <div style="text-align: center; font-family: monospace; width: 300px; margin: auto;">
-                    <h3><b>${storeName}</b></h3>
-                    <p>${title}</p>
-                    <p>Data: ${new Date().toLocaleString()}</p>
-                    <hr/>
+                <div style="font-family: monospace; width: 100%; max-width: 300px; margin: auto; padding: 10px; color: black; background: white;">
+                    <h3 style="text-align: center; margin: 0 0 5px 0;"><b>${storeName}</b></h3>
+                    <p style="text-align: center; margin: 0 0 5px 0; font-weight: bold;">${title}</p>
+                    ${waiterName ? `<p style="margin: 0 0 3px 0;">Garçom: <b>${waiterName}</b></p>` : ''}
+                    <p style="margin: 0 0 8px 0; font-size: 10px;">Data: ${new Date().toLocaleString()}</p>
+                    <hr style="border: dashed 1px black; margin: 5px 0;"/>
                     <div style="text-align: left;">
-                        ${items.map(i => `<p>${i.qty}x ${i.name} ${i.obs ? `(${i.obs})` : ''} — R$ ${i.total.toFixed(2)}</p>`).join('')}
+                        ${items.map(i => `<div style="margin-bottom: 4px;"><b>${i.qty}x</b> ${i.name} ${i.obs ? `<br><small style="padding-left: 10px;">Obs: ${i.obs}</small>` : ''} ${!isKitchen ? `<span style="float: right;">R$ ${i.total.toFixed(2)}</span>` : ''}</div>`).join('')}
                     </div>
-                    <hr/>
-                    ${!isKitchen ? `<h3>TOTAL: R$ ${total.toFixed(2)}</h3>` : ''}
-                    <p>Obrigado pela preferência!</p>
+                    <hr style="border: dashed 1px black; margin: 5px 0;"/>
+                    ${!isKitchen ? `<h3 style="text-align: right; margin: 5px 0;">TOTAL: R$ ${total.toFixed(2)}</h3>` : ''}
+                    <p style="text-align: center; margin-top: 10px; font-size: 10px;">LaricaOnline - ERP</p>
                 </div>
             `;
-            window.print();
+            setTimeout(() => {
+                window.print();
+            }, 300);
         }
 
         function renderReports() {
@@ -2210,35 +2160,6 @@
             await saveDb();
             closeConfigModal();
             renderStorePanel();
-        }
-
-        function updateJsonView() {
-            const area = document.getElementById('jsonTextArea');
-            if (area) area.value = JSON.stringify(db, null, 2);
-        }
-
-        async function saveJsonFromText() {
-            try {
-                db = JSON.parse(document.getElementById('jsonTextArea').value);
-                await saveDb();
-                alert('JSON atualizado com sucesso!');
-                checkAuthState();
-            } catch (e) { alert('Erro no JSON: ' + e.message); }
-        }
-
-        async function resetAllDatabase() {
-            if (confirm('Redefinir todo o sistema?')) {
-                localStorage.clear();
-                window.location.reload();
-            }
-        }
-
-        function exportJsonFile() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
-            const dl = document.createElement('a');
-            dl.setAttribute("href", dataStr);
-            dl.setAttribute("download", "larica_online_erp.json");
-            dl.click();
         }
     </script>
 </body>
