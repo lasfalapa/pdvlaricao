@@ -35,7 +35,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-primary selection:text-white">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-primary selection:text-white" onclick="unlockAudioContext()">
 
     <!-- ÁREA DE IMPRESSÃO TÉRMICA OCULTA -->
     <div id="printArea" class="hidden p-4 font-mono text-xs bg-white text-black"></div>
@@ -62,7 +62,7 @@
                     <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                         Larica<span class="text-primary">Online</span>
                         <span id="connectionStatusBadge" class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> AO VIVO
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
                         </span>
                     </h1>
                     <p class="text-xs text-slate-400" id="headerSubtitle">Plataforma ERP & Delivery Multi-lojas</p>
@@ -83,14 +83,14 @@
     <!-- CONTAINER PRINCIPAL -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6">
         
-        <!-- TELA DE AUTENTICAÇÃO / LOGIN (Cliente, Loja ou Garçom) -->
+        <!-- TELA DE AUTENTICAÇÃO / LOGIN -->
         <div id="viewAuth" class="max-w-md mx-auto bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden my-8 p-8 sm:p-10">
             <div class="text-center mb-6">
                 <div class="inline-flex bg-gradient-to-tr from-orange-500 to-amber-400 text-white p-4 rounded-2xl text-3xl mb-3 shadow-lg shadow-orange-500/30">
                     <i class="fa-solid fa-burger"></i>
                 </div>
                 <h2 class="text-2xl font-black text-slate-900 tracking-tight">Larica<span class="text-primary">Online</span></h2>
-                <p class="text-xs text-slate-500 mt-1">Sistema Integrado: Lojas, Mesas, Garçons & PDV</p>
+                <p class="text-xs text-slate-500 mt-1">Sistema Integrado na Nuvem (Render)</p>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-2xl flex mb-6">
@@ -244,7 +244,7 @@
             </div>
         </div>
 
-        <!-- PAINEL DA LOJA (GERÊNCIA, MESAS, PDV, GARÇONS, RELATÓRIOS) -->
+        <!-- PAINEL DA LOJA -->
         <div id="viewStore" class="hidden space-y-6">
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-wrap justify-between items-center gap-4">
                 <div>
@@ -329,25 +329,23 @@
                 </div>
             </div>
 
-            <!-- Controle de Mesas (100 Mesas) -->
+            <!-- Controle de Mesas -->
             <div id="storeContentTables" class="hidden space-y-4">
                 <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                     <div>
                         <h3 class="text-base font-extrabold text-slate-900">Salão de Mesas (1 a 100)</h3>
-                        <p class="text-xs text-slate-500">Verdes = Livres | Vermelhas = Ocupadas | Amarelas = Pedindo Fechamento</p>
+                        <p class="text-xs text-slate-500">Verdes = Livres | Vermelhas = Ocupadas</p>
                     </div>
                     <div class="flex items-center gap-4 text-xs font-bold">
                         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Livre</span>
                         <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500"></span> Ocupada</span>
                     </div>
                 </div>
-                <!-- Grid de Mesas Compactas (fáceis de tocar) -->
                 <div id="tablesGrid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2.5 max-h-[650px] overflow-y-auto p-2 bg-slate-100 rounded-2xl border border-slate-200"></div>
             </div>
 
             <!-- Caixa & Balcão (PDV) -->
             <div id="storeContentPdv" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Esquerda: Lançamento Balcão -->
                 <div class="md:col-span-2 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
                     <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-2">
                         <i class="fa-solid fa-cash-register text-primary"></i> Atendimento Rápido de Balcão / Caixa
@@ -364,7 +362,6 @@
                             <button onclick="pdvAddMenuItem()" class="bg-primary hover:bg-primaryDark text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">Adicionar</button>
                         </div>
                     </div>
-                    <!-- Adicionar Manualmente (Item Livre / Valor Livre) -->
                     <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
                         <p class="text-[11px] font-bold text-slate-700">Lançamento Manual Rápido (Item ou Valor Avulso)</p>
                         <div class="flex gap-2">
@@ -373,13 +370,11 @@
                             <button onclick="pdvAddManualItem()" class="bg-secondary text-white font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">Lançar</button>
                         </div>
                     </div>
-                    <!-- Lista do Caixa Atual -->
                     <div class="border border-slate-200 rounded-xl overflow-hidden">
                         <div class="bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">Itens na Conta Atual do Caixa</div>
                         <div id="pdvItemsList" class="p-3 space-y-2 max-h-48 overflow-y-auto divide-y divide-slate-100 text-xs"></div>
                     </div>
                 </div>
-                <!-- Direita: Totalizador e Fechamento Caixa -->
                 <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
                     <div class="space-y-4">
                         <h3 class="font-extrabold text-slate-900 text-base">Fechamento do Caixa</h3>
@@ -499,7 +494,6 @@
                 <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500"></span> Mesa Ocupada</span>
             </div>
 
-            <!-- Grid de Mesas para o Garçom -->
             <div id="waiterTablesGrid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-2.5 max-h-[600px] overflow-y-auto p-2 bg-slate-100 rounded-2xl border border-slate-200"></div>
         </div>
     </main>
@@ -522,7 +516,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE GERENCIAMENTO DE MESA (Garçom / Loja) -->
+    <!-- MODAL DE GERENCIAMENTO DE MESA -->
     <div id="tableModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -533,7 +527,6 @@
             </div>
             
             <div class="p-6 overflow-y-auto space-y-4 flex-grow">
-                <!-- Adicionar item do cardápio -->
                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
                     <p class="text-xs font-bold text-slate-700">Lançar via Cardápio</p>
                     <div class="flex gap-2">
@@ -543,9 +536,8 @@
                     </div>
                 </div>
 
-                <!-- Lançamento Manual na Mesa -->
                 <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
-                    <p class="text-xs font-bold text-slate-700">Lançamento Manual (Item / Valor Avulso)</p>
+                    <p class="text-xs font-bold text-slate-700">Lançamento Manual</p>
                     <div class="flex gap-2">
                         <input type="text" id="tableManualName" placeholder="Ex: Água com gás" class="flex-grow px-3 py-2 rounded-xl border border-slate-200 text-xs">
                         <input type="text" id="tableManualPrice" placeholder="Valor R$" class="w-24 px-3 py-2 rounded-xl border border-slate-200 text-xs">
@@ -553,7 +545,6 @@
                     </div>
                 </div>
 
-                <!-- Lista de Consumo da Mesa -->
                 <div class="space-y-2">
                     <p class="text-xs font-bold text-slate-700">Consumo Atual da Mesa</p>
                     <div id="tableConsumptionList" class="border border-slate-200 rounded-2xl p-3 space-y-2 max-h-48 overflow-y-auto divide-y divide-slate-100 text-xs"></div>
@@ -569,7 +560,7 @@
                 <button onclick="closeTableAccount()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-receipt"></i> Fechar Mesa & Imprimir Conta
                 </button>
-                <button onclick="printTableKitchen()" class="bg-secondary text-white font-bold px-4 py-3 rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer" title="Enviar Comanda para Cozinha">
+                <button onclick="printTableKitchen()" class="bg-secondary text-white font-bold px-4 py-3 rounded-xl text-xs transition flex items-center justify-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-fire-burner"></i> Cozinha
                 </button>
             </div>
@@ -611,7 +602,7 @@
             
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">ID de Acesso / Usuário (ex: pizzaria)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">ID de Acesso / Usuário</label>
                     <input type="text" id="regStoreId" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Apenas letras minúsculas sem espaço">
                 </div>
                 <div>
@@ -623,11 +614,11 @@
                     <input type="text" id="regStoreName" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Ex: Pizzaria Bella Napoli">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Categoria / Culinária</label>
-                    <input type="text" id="regStoreCategory" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Ex: Pizzas & Esfirras">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Categoria</label>
+                    <input type="text" id="regStoreCategory" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Ex: Pizzas">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Logotipo (Enviar do Computador)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Logotipo</label>
                     <input type="file" id="regStoreLogoFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-primary hover:file:bg-orange-100 cursor-pointer">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -669,7 +660,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Observações para o preparo</label>
-                    <input type="text" id="modalItemObs" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ex: Tirar cebola, maionese à parte...">
+                    <input type="text" id="modalItemObs" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ex: Tirar cebola...">
                 </div>
             </div>
             <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
@@ -722,7 +713,7 @@
 
                 <div id="addressSection" class="space-y-1">
                     <label class="text-xs font-bold text-slate-700 block">Endereço de Entrega</label>
-                    <input type="text" id="checkoutAddress" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    <input type="text" id="checkoutAddress" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">
                 </div>
 
                 <div class="space-y-2">
@@ -784,7 +775,31 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONFIGURAÇÕES DA LOJA -->
+    <!-- MODAL DE CHAT AO VIVO -->
+    <div id="chatModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl h-[500px] flex flex-col">
+            <div class="p-4 bg-secondary text-white flex justify-between items-center">
+                <div>
+                    <h3 id="chatModalTitle" class="font-bold text-sm"></h3>
+                    <p class="text-[10px] text-slate-300">Mensagens sincronizadas em tempo real</p>
+                </div>
+                <button onclick="closeChatModal()" class="text-white hover:text-slate-300 w-8 h-8 rounded-full flex items-center justify-center bg-slate-800 cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="chatMessagesContainer" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50"></div>
+
+            <div class="p-3 bg-white border-t border-slate-200 flex gap-2">
+                <input type="text" id="chatInputMessage" onkeypress="handleChatKeyPress(event)" placeholder="Digite sua mensagem..." class="flex-grow px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                <button onclick="sendChatMessage()" class="bg-primary hover:bg-primaryDark text-white px-5 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIGURAÇÕES -->
     <div id="configModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center">
@@ -794,7 +809,7 @@
             
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Restaurante</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome</label>
                     <input type="text" id="cfgStoreName" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
                 </div>
                 <div>
@@ -802,7 +817,7 @@
                     <input type="text" id="cfgStoreCategory" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Logotipo (Enviar do Computador)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Logotipo</label>
                     <input type="file" id="cfgStoreLogoFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-primary hover:file:bg-orange-100 cursor-pointer">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -827,7 +842,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE CADASTRO/EDIÇÃO DE ITEM DO CARDÁPIO -->
+    <!-- MODAL DE CARDÁPIO -->
     <div id="itemCrudModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center">
@@ -843,7 +858,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Categoria</label>
-                    <input type="text" id="crudItemCategory" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Ex: Lanches, Bebidas, Porções">
+                    <input type="text" id="crudItemCategory" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Ex: Lanches, Bebidas">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -874,14 +889,8 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE LÓGICA ERP COMPLETO -->
+    <!-- SCRIPT DE LÓGICA ERP COM SINCRONIZAÇÃO EM TEMPO REAL RESTAURADA -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(() => {});
-            });
-        }
-
         let db = {
             stores: {
                 "burguer": {
@@ -895,32 +904,11 @@
                     isOpen: true,
                     menu: [
                         { id: 1, name: "X-Burger Duplo", category: "Lanches", price: 28.90, image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", desc: "Dois hambúrgueres, queijo cheddar duplo e bacon.", available: true },
-                        { id: 2, name: "Batata Frita Especial", category: "Porções", price: 18.00, image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400", desc: "Porção crocante com cheddar e bacon.", available: true },
-                        { id: 3, name: "Coca-Cola 350ml", category: "Bebidas", price: 6.00, image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400", desc: "Gelada.", available: true }
-                    ],
-                    orders: [],
-                    tables: {}, // { "1": { items: [], status: "livre" } }
-                    waiters: {
-                        "carlos": { name: "Carlos Silva", pass: "123" }
-                    },
-                    salesHistory: []
-                },
-                "pizza": {
-                    pass: "1234",
-                    name: "Pizzaria Bella Napoli",
-                    category: "Pizzas",
-                    logo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400",
-                    time: "45-60 min",
-                    deliveryFee: 8.00,
-                    minOrder: 35.00,
-                    isOpen: true,
-                    menu: [
-                        { id: 101, name: "Pizza Calabresa Gigante", category: "Pizzas", price: 54.90, image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400", desc: "Molho de tomate artesanal, calabresa e cebola.", available: true },
-                        { id: 102, name: "Guaraná Antartica 2L", category: "Bebidas", price: 12.00, image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400", desc: "Gelado.", available: true }
+                        { id: 2, name: "Batata Frita Especial", category: "Porções", price: 18.00, image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400", desc: "Porção crocante com cheddar e bacon.", available: true }
                     ],
                     orders: [],
                     tables: {},
-                    waiters: {},
+                    waiters: { "carlos": { name: "Carlos Silva", pass: "123" } },
                     salesHistory: []
                 }
             }
@@ -966,13 +954,21 @@
         let audioEnabled = true;
         let selectedPaymentMethod = 'pix';
         
-        // Estado PDV Caixa
         let pdvCart = [];
         let pdvPaymentMethod = 'pix';
 
-        // Estado Mesa Ativa sendo editada
         let activeTableNumber = null;
         let activeTableStoreId = null;
+        let currentChatOrderId = null;
+        let currentChatStoreId = null;
+
+        // Desbloqueio do AudioContext do Navegador no primeiro clique
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function unlockAudioContext() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
 
         window.addEventListener('popstate', (event) => {
             if (!closeAnyOpenModal()) {
@@ -990,7 +986,7 @@
         history.pushState({page: 'active'}, '', '');
 
         function closeAnyOpenModal() {
-            const modals = ['itemModal', 'checkoutModal', 'clientOrdersModal', 'configModal', 'itemCrudModal', 'registerStoreModal', 'tableModal', 'waiterModal'];
+            const modals = ['itemModal', 'checkoutModal', 'clientOrdersModal', 'configModal', 'itemCrudModal', 'registerStoreModal', 'tableModal', 'waiterModal', 'chatModal'];
             for (let mId of modals) {
                 const modal = document.getElementById(mId);
                 if (modal && !modal.classList.contains('hidden')) {
@@ -1047,7 +1043,6 @@
             toastTimeout = setTimeout(() => { toast.classList.add('translate-x-[150%]'); }, 4500);
         }
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playHighBell() {
             if (!audioEnabled) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1074,7 +1069,28 @@
         function playSound(type) {
             if (!audioEnabled) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            if (type === 'new_order') { playHighBell(); return; }
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'new_order') {
+                playHighBell();
+                return;
+            } else if (type === 'status_change') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.12);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+            } else if (type === 'message') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(784, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            }
+            osc.start(now); osc.stop(now + 0.3);
         }
 
         function toggleAudio() {
@@ -1088,14 +1104,7 @@
             }
         }
 
-        setInterval(() => {
-            if (!currentUser || currentUser.role !== 'store') return;
-            const storeData = db.stores[currentUser.storeId];
-            if (!storeData) return;
-            const novos = (storeData.orders || []).filter(o => o.status === 'novos');
-            if (novos.length > 0 && audioEnabled) playHighBell();
-        }, 5000);
-
+        // SINCRONIZAÇÃO EM TEMPO REAL ATIVA (POLLING 1.5s COM DETECÇÃO DE MUDANÇA)
         function syncFromServerData(rawValue) {
             if (!rawValue || rawValue === lastKnownSnapshot) return;
             const oldDb = db;
@@ -1105,20 +1114,45 @@
             lastKnownSnapshot = rawValue;
 
             if (!currentUser) return;
+
             if (currentUser.role === 'store') {
-                renderStorePanel();
+                const storeId = currentUser.storeId;
+                const oldStoreOrders = (oldDb.stores[storeId] && oldDb.stores[storeId].orders) || [];
+                const newStoreObj = db.stores[storeId];
+                if (newStoreObj) {
+                    const newStoreOrders = newStoreObj.orders || [];
+                    const oldNovosIds = oldStoreOrders.filter(o => o.status === 'novos').map(o => o.id);
+                    const newNovos = newStoreOrders.filter(o => o.status === 'novos');
+                    if (newNovos.some(o => !oldNovosIds.includes(o.id))) {
+                        playSound('new_order');
+                        showToast('NOVO PEDIDO!', `Há um novo pedido no painel!`);
+                    }
+                    renderStorePanel();
+                }
             } else if (currentUser.role === 'client') {
                 if (selectedStoreId && db.stores[selectedStoreId]) {
                     renderStoreHeader();
                     renderCatalog();
                     updateClientOrdersBadge();
+
+                    // Atualiza modal de pedidos ao vivo se estiver aberto
+                    const ordersModal = document.getElementById('clientOrdersModal');
+                    if (ordersModal && !ordersModal.classList.contains('hidden')) {
+                        renderClientOrdersList();
+                    }
                 } else {
                     renderStoreList();
                 }
             } else if (currentUser.role === 'waiter') {
                 renderWaiterTables();
-                if (activeTableNumber !== null) renderTableModalConsumption();
             }
+
+            // Atualiza chat ao vivo se o modal estiver aberto
+            const chatModal = document.getElementById('chatModal');
+            if (chatModal && !chatModal.classList.contains('hidden') && currentChatStoreId && currentChatOrderId) {
+                renderChatMessages();
+            }
+
             updateJsonView();
         }
 
@@ -1150,7 +1184,6 @@
         }
 
         function loginAsClient() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             const name = document.getElementById('clientLoginName').value.trim();
             const phone = document.getElementById('clientLoginPhone').value.trim();
             const address = document.getElementById('clientLoginAddress').value.trim();
@@ -1161,7 +1194,6 @@
         }
 
         function loginAsStore() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             const user = document.getElementById('storeUser').value.trim().toLowerCase();
             const pass = document.getElementById('storePass').value.trim();
             if (db.stores[user] && db.stores[user].pass === pass) {
@@ -1174,7 +1206,6 @@
         }
 
         function loginAsWaiter() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             const storeId = document.getElementById('waiterStoreSelect').value;
             const username = document.getElementById('waiterUsername').value.trim().toLowerCase();
             const pass = document.getElementById('waiterPassword').value.trim();
@@ -1348,7 +1379,7 @@
             const grid = document.getElementById('catalogGrid');
             if (filtered.length === 0) { grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm">Nenhum item encontrado.</div>`; return; }
 
-            let closedWarning = !s.isOpen ? `<div class="col-span-full bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-2xl text-center font-bold mb-2">Loja Fechada no momento. Novos pedidos indisponíveis.</div>` : '';
+            let closedWarning = !s.isOpen ? `<div class="col-span-full bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-2xl text-center font-bold mb-2">Loja Fechada no momento.</div>` : '';
 
             grid.innerHTML = closedWarning + filtered.map(item => `
                 <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition ${!item.available || !s.isOpen ? 'opacity-60' : ''}">
@@ -1489,7 +1520,6 @@
             if (!db.stores[selectedStoreId].orders) db.stores[selectedStoreId].orders = [];
             db.stores[selectedStoreId].orders.unshift(newOrder);
 
-            // Salva no histórico de vendas
             if (!db.stores[selectedStoreId].salesHistory) db.stores[selectedStoreId].salesHistory = [];
             db.stores[selectedStoreId].salesHistory.unshift({ id: newOrder.id, type: 'Delivery', client: currentUser.name, total, time: new Date().toLocaleString() });
 
@@ -1519,6 +1549,7 @@
             });
             if (allMyOrders.length === 0) { container.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">Nenhum pedido recente.</p>`; return; }
             const statusLabels = { 'novos': { text: 'Aguardando', bg: 'bg-amber-100 text-amber-800' }, 'preparo': { text: 'Em Preparo', bg: 'bg-blue-100 text-blue-800' }, 'entrega': { text: 'Saiu p/ Entrega', bg: 'bg-purple-100 text-purple-800' }, 'concluidos': { text: 'Concluído', bg: 'bg-emerald-100 text-emerald-800' } };
+            
             container.innerHTML = allMyOrders.map(o => `
                 <div class="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm">
                     <div class="flex justify-between items-center">
@@ -1530,12 +1561,90 @@
                     </div>
                     <div class="flex justify-between items-center text-xs pt-1">
                         <span class="font-bold text-slate-900">Total: R$ ${o.total.toFixed(2)}</span>
+                        <button onclick="openChatModal('${o.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
+                        </button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- PAINEL DA LOJA & MÓDULO DE MESAS (100 MESAS) ---
+        // --- CHAT AO VIVO ---
+        function openChatModal(storeId, orderId) {
+            currentChatStoreId = storeId;
+            currentChatOrderId = orderId;
+            const storeObj = db.stores[storeId];
+            if (!storeObj) return;
+            const order = (storeObj.orders || []).find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('chatModalTitle').innerText = `Atendimento Pedido #${order.id} (${storeObj.name})`;
+            document.getElementById('chatModal').classList.remove('hidden');
+            renderChatMessages();
+        }
+
+        function closeChatModal() {
+            document.getElementById('chatModal').classList.add('hidden');
+            currentChatOrderId = null;
+            currentChatStoreId = null;
+        }
+
+        function renderChatMessages() {
+            if (!currentChatStoreId || !currentChatOrderId) return;
+            const storeObj = db.stores[currentChatStoreId];
+            if (!storeObj) return;
+            const order = (storeObj.orders || []).find(o => o.id === currentChatOrderId);
+            if (!order) return;
+
+            const container = document.getElementById('chatMessagesContainer');
+            if (!order.messages || order.messages.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Nenhuma mensagem ainda.</p>`;
+                return;
+            }
+
+            container.innerHTML = order.messages.map(m => `
+                <div class="flex flex-col ${m.sender === currentUser.role ? 'items-end' : 'items-start'}">
+                    <div class="max-w-[80%] p-3 rounded-2xl text-xs ${m.sender === currentUser.role ? 'bg-primary text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'}">
+                        <p class="font-bold text-[10px] mb-0.5 opacity-80">${m.senderName}</p>
+                        <p>${m.text}</p>
+                    </div>
+                    <span class="text-[9px] text-slate-400 mt-1">${m.time}</span>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInputMessage');
+            const text = input.value.trim();
+            if (!text || !currentChatOrderId || !currentChatStoreId) return;
+
+            try {
+                const res = await fetch('/api/db');
+                const serverText = await res.text();
+                if (serverText && serverText !== 'null' && serverText.trim().startsWith('{')) db = JSON.parse(serverText);
+            } catch (e) {}
+
+            const storeObj = db.stores[currentChatStoreId];
+            const order = (storeObj.orders || []).find(o => o.id === currentChatOrderId);
+            if (!order) return;
+
+            if (!order.messages) order.messages = [];
+            order.messages.push({
+                sender: currentUser.role,
+                senderName: currentUser.name,
+                text: text,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            input.value = '';
+            await saveDb();
+            renderChatMessages();
+        }
+
+        function handleChatKeyPress(e) { if (e.key === 'Enter') sendChatMessage(); }
+
+        // --- PAINEL DA LOJA ---
         function renderStorePanel() {
             const s = db.stores[currentUser.storeId];
             document.getElementById('currentStorePanelName').innerText = s.name;
@@ -1572,7 +1681,6 @@
             if (tab === 'reports') renderReports();
         }
 
-        // Renderização do Grid de 100 Mesas para o Lojista
         function renderTablesGridStore() {
             const s = db.stores[currentUser.storeId];
             const grid = document.getElementById('tablesGrid');
@@ -1594,7 +1702,6 @@
             grid.innerHTML = html;
         }
 
-        // Renderização do Grid de 100 Mesas para o Garçom
         function renderWaiterTables() {
             const storeId = currentUser.storeId;
             const s = db.stores[storeId];
@@ -1617,7 +1724,6 @@
             grid.innerHTML = html;
         }
 
-        // Abertura do Modal de Comanda da Mesa
         function openTableModal(storeId, tableNum) {
             activeTableStoreId = storeId;
             activeTableNumber = tableNum;
@@ -1650,14 +1756,7 @@
             if (!s.tables) s.tables = {};
             if (!s.tables[activeTableNumber]) s.tables[activeTableNumber] = { items: [] };
 
-            s.tables[activeTableNumber].items.push({
-                cartId: Date.now() + Math.random(),
-                name: item.name,
-                price: item.price,
-                qty: qty,
-                total: item.price * qty
-            });
-
+            s.tables[activeTableNumber].items.push({ cartId: Date.now() + Math.random(), name: item.name, price: item.price, qty: qty, total: item.price * qty });
             await saveDb();
             renderTableModalConsumption();
             if (currentUser.role === 'store') renderTablesGridStore();
@@ -1667,20 +1766,13 @@
         async function tableAddManualItem() {
             const name = document.getElementById('tableManualName').value.trim();
             const price = parseFloat(document.getElementById('tableManualPrice').value);
-            if (!name || isNaN(price)) { alert('Informe a descrição e o valor do item manual.'); return; }
+            if (!name || isNaN(price)) { alert('Informe a descrição e o valor.'); return; }
 
             const s = db.stores[activeTableStoreId];
             if (!s.tables) s.tables = {};
             if (!s.tables[activeTableNumber]) s.tables[activeTableNumber] = { items: [] };
 
-            s.tables[activeTableNumber].items.push({
-                cartId: Date.now() + Math.random(),
-                name: name,
-                price: price,
-                qty: 1,
-                total: price
-            });
-
+            s.tables[activeTableNumber].items.push({ cartId: Date.now() + Math.random(), name, price, qty: 1, total: price });
             document.getElementById('tableManualName').value = '';
             document.getElementById('tableManualPrice').value = '';
             await saveDb();
@@ -1696,7 +1788,7 @@
             const container = document.getElementById('tableConsumptionList');
 
             if (items.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Nenhum consumo registrado nesta mesa.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Nenhum consumo registrado.</p>`;
                 document.getElementById('tableTotalPrice').innerText = '0,00';
                 return;
             }
@@ -1723,28 +1815,23 @@
             if (currentUser.role === 'waiter') renderWaiterTables();
         }
 
-        // Fechamento da Mesa (Gera comanda térmica para impressão e zera a mesa)
         async function closeTableAccount() {
             const s = db.stores[activeTableStoreId];
             const tableData = s.tables && s.tables[activeTableNumber];
-            if (!tableData || !tableData.items || tableData.items.length === 0) { alert('Mesa já está vazia.'); return; }
+            if (!tableData || !tableData.items || tableData.items.length === 0) { alert('Mesa vazia.'); return; }
 
             const total = tableData.items.reduce((acc, i) => acc + i.total, 0);
-
-            // Imprime comanda de fechamento
             printReceipt(`CONTA - MESA ${activeTableNumber}`, s.name, tableData.items, total);
 
-            // Salva no histórico de vendas da loja
             if (!s.salesHistory) s.salesHistory = [];
             s.salesHistory.unshift({ id: `Mesa ${activeTableNumber}`, type: 'Mesa', client: `Mesa ${activeTableNumber}`, total, time: new Date().toLocaleString() });
 
-            // Zera a mesa
             s.tables[activeTableNumber] = { items: [] };
             await saveDb();
             closeTableModal();
             if (currentUser.role === 'store') renderTablesGridStore();
             if (currentUser.role === 'waiter') renderWaiterTables();
-            showToast('Mesa Fechada!', `Conta da Mesa ${activeTableNumber} encerrada com sucesso.`);
+            showToast('Mesa Fechada!', `Conta da Mesa ${activeTableNumber} encerrada.`);
         }
 
         function printTableKitchen() {
@@ -1754,7 +1841,6 @@
             printReceipt(`PEDIDO COZINHA - MESA ${activeTableNumber}`, s.name, tableData.items, 0, true);
         }
 
-        // --- MÓDULO PDV & CAIXA DE BALCÃO ---
         function populatePdvSelect() {
             if (!currentUser || currentUser.role !== 'store') return;
             const s = db.stores[currentUser.storeId];
@@ -1790,7 +1876,7 @@
             const container = document.getElementById('pdvItemsList');
             if (!container) return;
             if (pdvCart.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Nenhum item adicionado ao caixa.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Caixa vazio.</p>`;
                 document.getElementById('pdvTotalPrice').innerText = '0,00';
                 return;
             }
@@ -1808,10 +1894,7 @@
             document.getElementById('pdvTotalPrice').innerText = total.toFixed(2);
         }
 
-        function removePdvItem(idx) {
-            pdvCart.splice(idx, 1);
-            renderPdvItems();
-        }
+        function removePdvItem(idx) { pdvCart.splice(idx, 1); renderPdvItems(); }
 
         async function finalizePdvSale() {
             if (pdvCart.length === 0) { alert('Caixa vazio.'); return; }
@@ -1819,10 +1902,8 @@
             const clientName = document.getElementById('pdvClientName').value.trim() || 'Balcão';
             const total = pdvCart.reduce((acc, i) => acc + i.total, 0);
 
-            // Imprime cupom térmico
             printReceipt('CUPOM DE CAIXA / BALCÃO', s.name, pdvCart, total);
 
-            // Salva histórico
             if (!s.salesHistory) s.salesHistory = [];
             s.salesHistory.unshift({ id: `Balcão #${Math.floor(100+Math.random()*900)}`, type: 'Balcão', client: clientName, total, time: new Date().toLocaleString() });
 
@@ -1830,10 +1911,9 @@
             pdvCart = [];
             renderPdvItems();
             renderReports();
-            showToast('Venda Concluída!', `Caixa registrado e cupom gerado com sucesso.`);
+            showToast('Venda Concluída!', `Cupom gerado com sucesso.`);
         }
 
-        // --- IMPRESSÃO TÉRMICA & RELATÓRIOS ---
         function printReceipt(title, storeName, items, total, isKitchen = false) {
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = `
@@ -1857,7 +1937,6 @@
             if (!currentUser || currentUser.role !== 'store') return;
             const s = db.stores[currentUser.storeId];
             const history = s.salesHistory || [];
-
             const totalRevenue = history.reduce((acc, h) => acc + h.total, 0);
             const totalCount = history.length;
             const ticketMedio = totalCount > 0 ? totalRevenue / totalCount : 0;
@@ -1867,23 +1946,19 @@
             document.getElementById('reportTicketMedio').innerText = ticketMedio.toFixed(2);
 
             const list = document.getElementById('reportSalesList');
-            if (history.length === 0) {
-                list.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Nenhuma venda registrada até o momento.</p>`;
-                return;
-            }
+            if (history.length === 0) { list.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Nenhuma venda registrada.</p>`; return; }
 
             list.innerHTML = history.map(h => `
                 <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex justify-between items-center text-xs">
                     <div>
                         <span class="font-bold text-slate-900">${h.type} — ${h.id}</span>
-                        <p class="text-[10px] text-slate-500">Cliente/Ref: ${h.client} • ${h.time}</p>
+                        <p class="text-[10px] text-slate-500">Cliente: ${h.client} • ${h.time}</p>
                     </div>
                     <span class="font-black text-primary">R$ ${h.total.toFixed(2)}</span>
                 </div>
             `).join('');
         }
 
-        // --- GESTÃO DE GARÇONS ---
         function renderWaitersList() {
             if (!currentUser || currentUser.role !== 'store') return;
             const s = db.stores[currentUser.storeId];
@@ -1914,7 +1989,7 @@
             const name = document.getElementById('regWaiterName').value.trim();
             const user = document.getElementById('regWaiterUser').value.trim().toLowerCase();
             const pass = document.getElementById('regWaiterPass').value.trim();
-            if (!name || !user || !pass) { alert('Preencha todos os campos do garçom.'); return; }
+            if (!name || !user || !pass) { alert('Preencha todos os campos.'); return; }
 
             const s = db.stores[currentUser.storeId];
             if (!s.waiters) s.waiters = {};
@@ -1923,11 +1998,11 @@
             await saveDb();
             closeWaiterModal();
             renderWaitersList();
-            showToast('Garçom Cadastrado!', `${name} adicionado com sucesso.`);
+            showToast('Garçom Cadastrado!', `${name} adicionado.`);
         }
 
         async function deleteWaiter(userKey) {
-            if (confirm('Deseja realmente remover este garçom?')) {
+            if (confirm('Remover garçom?')) {
                 const s = db.stores[currentUser.storeId];
                 delete s.waiters[userKey];
                 await saveDb();
@@ -1935,7 +2010,6 @@
             }
         }
 
-        // --- KANBAN / CARDÁPIO / LOJA ---
         function renderKanban() {
             const s = db.stores[currentUser.storeId];
             const orders = s.orders || [];
@@ -1987,7 +2061,11 @@
         async function advanceOrderStatus(orderId, nextStatus) {
             const s = db.stores[currentUser.storeId];
             const order = s.orders.find(o => o.id === orderId);
-            if (order) { order.status = nextStatus; await saveDb(); renderKanban(); }
+            if (order) {
+                order.status = nextStatus;
+                await saveDb();
+                renderKanban();
+            }
         }
 
         function renderStoreMenu() {
