@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LaricaOnline - ERP Multi-lojas, Mesas, Garçons & PDV</title>
+    <title>LaricaOnline - ERP Multi-lojas, Mesas, Garçons, Entregadores & PDV</title>
     <!-- Configurações PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f97316">
@@ -28,7 +28,7 @@
         }
     </script>
     <style>
-        /* ESTILO PROFISSIONAL DE BOBINA TÉRMICA (NOTINHA FISCAL) */
+        /* ESTILO PROFISSIONAL DE BOBINA TÉRMICA (NOTINHA FISCAL 80MM) */
         @media print {
             body * { visibility: hidden !important; }
             #printArea, #printArea * { visibility: visible !important; }
@@ -107,10 +107,11 @@
                 <p class="text-xs text-slate-500 mt-1">Sistema Integrado na Nuvem (Render)</p>
             </div>
 
-            <div class="bg-slate-100 p-1 rounded-2xl flex mb-6">
-                <button type="button" onclick="switchAuthTab('client')" id="tabClientBtn" class="flex-1 py-2 font-bold text-xs rounded-xl bg-white text-slate-900 shadow-sm transition cursor-pointer">Cliente</button>
-                <button type="button" onclick="switchAuthTab('store')" id="tabStoreBtn" class="flex-1 py-2 font-bold text-xs rounded-xl text-slate-500 hover:text-slate-900 transition cursor-pointer">Loja</button>
-                <button type="button" onclick="switchAuthTab('waiter')" id="tabWaiterBtn" class="flex-1 py-2 font-bold text-xs rounded-xl text-slate-500 hover:text-slate-900 transition cursor-pointer">Garçom</button>
+            <div class="bg-slate-100 p-1 rounded-2xl grid grid-cols-4 gap-1 mb-6 text-[11px]">
+                <button type="button" onclick="switchAuthTab('client')" id="tabClientBtn" class="py-2 font-bold rounded-xl bg-white text-slate-900 shadow-sm transition cursor-pointer">Cliente</button>
+                <button type="button" onclick="switchAuthTab('store')" id="tabStoreBtn" class="py-2 font-bold rounded-xl text-slate-500 hover:text-slate-900 transition cursor-pointer">Loja</button>
+                <button type="button" onclick="switchAuthTab('waiter')" id="tabWaiterBtn" class="py-2 font-bold rounded-xl text-slate-500 hover:text-slate-900 transition cursor-pointer">Garçom</button>
+                <button type="button" onclick="switchAuthTab('delivery')" id="tabDeliveryBtn" class="py-2 font-bold rounded-xl text-slate-500 hover:text-slate-900 transition cursor-pointer">Motoboy</button>
             </div>
 
             <!-- Formulário Cliente -->
@@ -193,6 +194,29 @@
                     <span>Acessar Comandas das Mesas</span> <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </div>
+
+            <!-- Formulário Entregador (Motoboy) -->
+            <div id="authDeliveryBox" class="space-y-4 hidden">
+                <div class="bg-purple-50 border border-purple-200 p-3 rounded-2xl text-[11px] text-purple-800">
+                    <p class="font-bold mb-0.5"><i class="fa-solid fa-circle-info"></i> Acesso do Entregador</p>
+                    Insira seu usuário e senha cadastrados pela loja.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Loja</label>
+                    <select id="deliveryStoreSelect" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs bg-white"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Usuário / Login</label>
+                    <input type="text" id="deliveryUsername" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs" placeholder="Ex: rogerio">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Senha</label>
+                    <input type="password" id="deliveryPassword" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs" placeholder="Senha">
+                </div>
+                <button type="button" onclick="loginAsDelivery()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-extrabold py-3.5 rounded-xl shadow-lg transition text-xs flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Acessar Painel de Entregas</span> <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
         </div>
 
         <!-- VISÃO SHOPPING / LISTA DE LOJAS (CLIENTE) -->
@@ -263,7 +287,7 @@
                     <h2 class="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
                         <i class="fa-solid fa-store text-primary"></i> Painel da Loja: <span id="currentStorePanelName" class="text-primary"></span>
                     </h2>
-                    <p class="text-sm text-slate-500">Gestão integrada de pedidos, mesas, balcão, garçons e relatórios.</p>
+                    <p class="text-sm text-slate-500">Gestão integrada de pedidos, mesas, balcão, garçons, entregadores e relatórios.</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <button onclick="toggleStoreStatus()" id="storeOpenToggleBtn" class="px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"></button>
@@ -285,7 +309,10 @@
                     <i class="fa-solid fa-cash-register"></i> Caixa & Balcão (PDV)
                 </button>
                 <button onclick="switchStoreTab('waiters')" id="storeTabWaiters" class="pb-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition flex items-center gap-2 whitespace-nowrap cursor-pointer">
-                    <i class="fa-solid fa-user-tie"></i> Gestão de Garçons
+                    <i class="fa-solid fa-user-tie"></i> Garçons
+                </button>
+                <button onclick="switchStoreTab('deliveryTeam')" id="storeTabDeliveryTeam" class="pb-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition flex items-center gap-2 whitespace-nowrap cursor-pointer">
+                    <i class="fa-solid fa-motorcycle"></i> Entregadores
                 </button>
                 <button onclick="switchStoreTab('menu')" id="storeTabMenu" class="pb-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition flex items-center gap-2 whitespace-nowrap cursor-pointer">
                     <i class="fa-solid fa-utensils"></i> Cardápio
@@ -420,6 +447,20 @@
                 <div id="waitersGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
 
+            <!-- Gestão de Entregadores -->
+            <div id="storeContentDeliveryTeam" class="hidden space-y-6">
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Entregadores / Motoboys Cadastrados</h3>
+                        <p class="text-xs text-slate-500">Cadastre os entregadores que farão as entregas e acessarão o painel deles.</p>
+                    </div>
+                    <button onclick="openDeliveryTeamModal()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-motorcycle"></i> Novo Entregador
+                    </button>
+                </div>
+                <div id="deliveryTeamGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+
             <!-- Cardápio Loja -->
             <div id="storeContentMenu" class="hidden space-y-6">
                 <div class="flex justify-between items-center">
@@ -485,6 +526,24 @@
             </div>
 
             <div id="waiterTablesGrid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-2.5 max-h-[600px] overflow-y-auto p-2 bg-slate-100 rounded-2xl border border-slate-200"></div>
+        </div>
+
+        <!-- PAINEL DO ENTREGADOR (MOTOBOY) -->
+        <div id="viewDelivery" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-motorcycle text-purple-600"></i> Painel do Entregador: <span id="deliveryHeaderName" class="text-purple-600"></span>
+                    </h2>
+                    <p class="text-xs text-slate-500">Pedidos direcionados a você para entrega e chat com cliente/loja.</p>
+                </div>
+                <button onclick="logoutDelivery()" class="bg-red-500/20 text-red-600 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">Sair</button>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="font-bold text-slate-900 text-sm">Entregas Atribuídas</h3>
+                <div id="deliveryOrdersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
         </div>
     </main>
 
@@ -579,6 +638,49 @@
                 </div>
             </div>
             <button onclick="saveNewWaiter()" class="w-full bg-primary hover:bg-primaryDark text-white font-bold py-3 rounded-xl shadow-lg transition text-sm cursor-pointer">Salvar Garçom</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO DE ENTREGADOR -->
+    <div id="deliveryTeamModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-extrabold text-slate-900 text-lg">Cadastrar Novo Entregador</h3>
+                <button onclick="closeDeliveryTeamModal()" class="text-slate-500 hover:text-slate-700 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Entregador</label>
+                    <input type="text" id="regDeliveryName" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Ex: Rogério Motoboy">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Usuário / Login</label>
+                    <input type="text" id="regDeliveryUser" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Ex: rogerio">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Senha</label>
+                    <input type="password" id="regDeliveryPass" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" placeholder="Senha">
+                </div>
+            </div>
+            <button onclick="saveNewDeliveryGuy()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm cursor-pointer">Salvar Entregador</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE ATRIBUIR ENTREGADOR -->
+    <div id="assignDeliveryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-extrabold text-slate-900 text-lg">Direcionar para Entregador</h3>
+                <button onclick="closeAssignDeliveryModal()" class="text-slate-500 hover:text-slate-700 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <input type="hidden" id="assignOrderId">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Selecione o Entregador</label>
+                    <select id="assignDeliverySelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white"></select>
+                </div>
+            </div>
+            <button onclick="confirmAssignDelivery()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-lg transition text-sm cursor-pointer">Despachar Pedido</button>
         </div>
     </div>
 
@@ -877,8 +979,17 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE LÓGICA OTIMIZADA E CORRIGIDA -->
+    <!-- SCRIPT DE LÓGICA OTIMIZADA COM SERVICE WORKER INTEGRADO -->
     <script>
+        // REGISTRO DO SERVICE WORKER PARA SUPORTE OFFLINE / PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registrado com sucesso:', reg.scope))
+                    .catch(err => console.log('Falha ao registrar o Service Worker:', err));
+            });
+        }
+
         let db = {
             stores: {
                 "burguer": {
@@ -897,6 +1008,7 @@
                     orders: [],
                     tables: {},
                     waiters: { "carlos": { name: "Carlos Silva", pass: "123" } },
+                    deliveryGuys: { "rogerio": { name: "Rogério Motoboy", pass: "123" } },
                     salesHistory: []
                 }
             }
@@ -969,7 +1081,7 @@
         history.pushState({page: 'active'}, '', '');
 
         function closeAnyOpenModal() {
-            const modals = ['itemModal', 'checkoutModal', 'clientOrdersModal', 'configModal', 'itemCrudModal', 'registerStoreModal', 'tableModal', 'waiterModal', 'chatModal'];
+            const modals = ['itemModal', 'checkoutModal', 'clientOrdersModal', 'configModal', 'itemCrudModal', 'registerStoreModal', 'tableModal', 'waiterModal', 'deliveryTeamModal', 'assignDeliveryModal', 'chatModal'];
             for (let mId of modals) {
                 const modal = document.getElementById(mId);
                 if (modal && !modal.classList.contains('hidden')) {
@@ -1099,6 +1211,8 @@
                 }
             } else if (currentUser.role === 'waiter') {
                 renderWaiterTables();
+            } else if (currentUser.role === 'delivery') {
+                renderDeliveryPanel();
             }
 
             const chatModal = document.getElementById('chatModal');
@@ -1123,20 +1237,22 @@
             } catch (e) {}
         }, 1500);
 
-        window.onload = () => { loadInitialDbFromServer(); populateWaiterStoreSelect(); };
+        window.onload = () => { loadInitialDbFromServer(); populateSelects(); };
 
-        function populateWaiterStoreSelect() {
-            const select = document.getElementById('waiterStoreSelect');
-            if (!select) return;
-            select.innerHTML = Object.keys(db.stores).map(k => `<option value="${k}">${db.stores[k].name}</option>`).join('');
+        function populateSelects() {
+            const selectWaiter = document.getElementById('waiterStoreSelect');
+            if (selectWaiter) selectWaiter.innerHTML = Object.keys(db.stores).map(k => `<option value="${k}">${db.stores[k].name}</option>`).join('');
+            
+            const selectDelivery = document.getElementById('deliveryStoreSelect');
+            if (selectDelivery) selectDelivery.innerHTML = Object.keys(db.stores).map(k => `<option value="${k}">${db.stores[k].name}</option>`).join('');
         }
 
         function switchAuthTab(type) {
-            ['client', 'store', 'waiter'].forEach(t => {
-                document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`).className = t === type ? "flex-1 py-2 font-bold text-xs rounded-xl bg-white text-slate-900 shadow-sm transition cursor-pointer" : "flex-1 py-2 font-bold text-xs rounded-xl text-slate-500 hover:text-slate-900 transition cursor-pointer";
+            ['client', 'store', 'waiter', 'delivery'].forEach(t => {
+                document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Btn`).className = t === type ? "py-2 font-bold rounded-xl bg-white text-slate-900 shadow-sm transition cursor-pointer" : "py-2 font-bold rounded-xl text-slate-500 hover:text-slate-900 transition cursor-pointer";
                 document.getElementById(`auth${t.charAt(0).toUpperCase() + t.slice(1)}Box`).classList.toggle('hidden', t !== type);
             });
-            populateWaiterStoreSelect();
+            populateSelects();
         }
 
         function loginAsClient() {
@@ -1176,6 +1292,21 @@
             }
         }
 
+        function loginAsDelivery() {
+            const storeId = document.getElementById('deliveryStoreSelect').value;
+            const username = document.getElementById('deliveryUsername').value.trim().toLowerCase();
+            const pass = document.getElementById('deliveryPassword').value.trim();
+            const storeObj = db.stores[storeId];
+
+            if (storeObj && storeObj.deliveryGuys && storeObj.deliveryGuys[username] && storeObj.deliveryGuys[username].pass === pass) {
+                currentUser = { role: 'delivery', storeId, username, name: storeObj.deliveryGuys[username].name };
+                localStorage.setItem('larica_current_user', JSON.stringify(currentUser));
+                checkAuthState();
+            } else {
+                alert('Entregador ou senha incorretos!');
+            }
+        }
+
         function logout() {
             if (confirm('Deseja realmente sair da sessão atual?')) {
                 currentUser = null; selectedStoreId = null;
@@ -1188,6 +1319,7 @@
         }
 
         function logoutWaiter() { logout(); }
+        function logoutDelivery() { logout(); }
 
         function checkAuthState() {
             const viewAuth = document.getElementById('viewAuth');
@@ -1195,15 +1327,16 @@
             const viewClient = document.getElementById('viewClient');
             const viewStore = document.getElementById('viewStore');
             const viewWaiter = document.getElementById('viewWaiter');
+            const viewDelivery = document.getElementById('viewDelivery');
             const authNavArea = document.getElementById('authNavArea');
 
             if (!currentUser) {
                 viewAuth.classList.remove('hidden');
-                viewStoreList.classList.add('hidden'); viewClient.classList.add('hidden'); viewStore.classList.add('hidden'); viewWaiter.classList.add('hidden');
+                viewStoreList.classList.add('hidden'); viewClient.classList.add('hidden'); viewStore.classList.add('hidden'); viewWaiter.classList.add('hidden'); viewDelivery.classList.add('hidden');
                 authNavArea.innerHTML = '';
                 document.getElementById('floatingCartBar').classList.add('hidden');
             } else if (currentUser.role === 'client') {
-                viewAuth.classList.add('hidden'); viewStore.classList.add('hidden'); viewWaiter.classList.add('hidden');
+                viewAuth.classList.add('hidden'); viewStore.classList.add('hidden'); viewWaiter.classList.add('hidden'); viewDelivery.classList.add('hidden');
                 authNavArea.innerHTML = `
                     <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
                         <i class="fa-solid fa-user text-primary"></i> <span class="font-bold text-white">${currentUser.name}</span>
@@ -1218,7 +1351,7 @@
                     renderStoreHeader(); renderCatalog(); updateClientOrdersBadge();
                 }
             } else if (currentUser.role === 'store') {
-                viewAuth.classList.add('hidden'); viewStoreList.classList.add('hidden'); viewClient.classList.add('hidden'); viewWaiter.classList.add('hidden');
+                viewAuth.classList.add('hidden'); viewStoreList.classList.add('hidden'); viewClient.classList.add('hidden'); viewWaiter.classList.add('hidden'); viewDelivery.classList.add('hidden');
                 viewStore.classList.remove('hidden');
                 authNavArea.innerHTML = `
                     <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
@@ -1228,7 +1361,7 @@
                 `;
                 renderStorePanel();
             } else if (currentUser.role === 'waiter') {
-                viewAuth.classList.add('hidden'); viewStoreList.classList.add('hidden'); viewClient.classList.add('hidden'); viewStore.classList.add('hidden');
+                viewAuth.classList.add('hidden'); viewStoreList.classList.add('hidden'); viewClient.classList.add('hidden'); viewStore.classList.add('hidden'); viewDelivery.classList.add('hidden');
                 viewWaiter.classList.remove('hidden');
                 document.getElementById('waiterHeaderName').innerText = `${currentUser.name} (${db.stores[currentUser.storeId].name})`;
                 authNavArea.innerHTML = `
@@ -1238,6 +1371,17 @@
                     <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white p-2 rounded-xl text-xs transition cursor-pointer"><i class="fa-solid fa-power-off"></i></button>
                 `;
                 renderWaiterTables();
+            } else if (currentUser.role === 'delivery') {
+                viewAuth.classList.add('hidden'); viewStoreList.classList.add('hidden'); viewClient.classList.add('hidden'); viewStore.classList.add('hidden'); viewWaiter.classList.add('hidden');
+                viewDelivery.classList.remove('hidden');
+                document.getElementById('deliveryHeaderName').innerText = `${currentUser.name} (${db.stores[currentUser.storeId].name})`;
+                authNavArea.innerHTML = `
+                    <div class="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+                        <i class="fa-solid fa-motorcycle text-purple-400"></i> <span class="font-bold text-white">${currentUser.name}</span>
+                    </div>
+                    <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white p-2 rounded-xl text-xs transition cursor-pointer"><i class="fa-solid fa-power-off"></i></button>
+                `;
+                renderDeliveryPanel();
             }
         }
 
@@ -1464,7 +1608,8 @@
                 items: [...cart], subtotal, fee, total, deliveryType,
                 paymentMethod: selectedPaymentMethod,
                 changeAmount: selectedPaymentMethod === 'dinheiro' ? document.getElementById('changeAmount').value : '',
-                status: 'novos', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), messages: []
+                status: 'novos', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+                deliveryGuy: null, messages: []
             };
 
             try {
@@ -1514,6 +1659,7 @@
                     </div>
                     <div class="text-xs text-slate-600 space-y-1 border-t border-b border-slate-100 py-2">
                         ${o.items.map(i => `<p>${i.qty}x ${i.name} — R$ ${i.total.toFixed(2)}</p>`).join('')}
+                        ${o.deliveryGuy ? `<p class="text-[11px] text-purple-700 font-bold pt-1"><i class="fa-solid fa-motorcycle"></i> Entregador: ${o.deliveryGuy}</p>` : ''}
                     </div>
                     <div class="flex justify-between items-center text-xs pt-1">
                         <span class="font-bold text-slate-900">Total: R$ ${o.total.toFixed(2)}</span>
@@ -1525,7 +1671,7 @@
             `).join('');
         }
 
-        // --- CHAT AO VIVO CORRIGIDO ---
+        // --- CHAT AO VIVO TRIDIRECIONAL (Loja, Cliente, Entregador) ---
         function openChatModal(storeId, orderId) {
             currentChatStoreId = storeId;
             currentChatOrderId = orderId;
@@ -1559,11 +1705,11 @@
             }
 
             container.innerHTML = order.messages.map(m => {
-                const isMe = m.sender === currentUser.role;
+                const isMe = m.senderRole === currentUser.role && m.senderName === currentUser.name;
                 return `
                     <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
                         <div class="max-w-[80%] p-3 rounded-2xl text-xs ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'}">
-                            <p class="font-bold text-[10px] mb-0.5 opacity-80">${m.senderName}</p>
+                            <p class="font-bold text-[10px] mb-0.5 opacity-80">${m.senderName} (${m.senderRole.toUpperCase()})</p>
                             <p>${m.text}</p>
                         </div>
                         <span class="text-[9px] text-slate-400 mt-1">${m.time}</span>
@@ -1590,7 +1736,7 @@
 
             if (!order.messages) order.messages = [];
             order.messages.push({
-                sender: currentUser.role,
+                senderRole: currentUser.role,
                 senderName: currentUser.role === 'store' ? storeObj.name : currentUser.name,
                 text: text,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -1614,6 +1760,7 @@
             populatePdvSelect();
             populateTableItemSelect();
             renderWaitersList();
+            renderDeliveryTeamList();
             renderReports();
         }
 
@@ -1632,7 +1779,7 @@
         }
 
         function switchStoreTab(tab) {
-            ['Kanban', 'Tables', 'Pdv', 'Waiters', 'Menu', 'Reports'].forEach(t => {
+            ['Kanban', 'Tables', 'Pdv', 'Waiters', 'DeliveryTeam', 'Menu', 'Reports'].forEach(t => {
                 document.getElementById(`storeTab${t}`).className = t.toLowerCase() === tab.toLowerCase() ? "pb-3 font-bold text-sm border-b-2 border-primary text-primary transition flex items-center gap-2 whitespace-nowrap cursor-pointer" : "pb-3 font-bold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition flex items-center gap-2 whitespace-nowrap cursor-pointer";
                 document.getElementById(`storeContent${t}`).classList.toggle('hidden', t.toLowerCase() !== tab.toLowerCase());
             });
@@ -1889,6 +2036,9 @@
                 if (orderDetails.address) {
                     paymentInfo += `<p style="margin: 2px 0; font-size: 10px;">Endereço: ${orderDetails.address}</p>`;
                 }
+                if (orderDetails.deliveryGuy) {
+                    paymentInfo += `<p style="margin: 2px 0; font-size: 10px;">Entregador: ${orderDetails.deliveryGuy}</p>`;
+                }
             }
 
             printArea.innerHTML = `
@@ -1948,6 +2098,7 @@
             `).join('');
         }
 
+        // --- GESTÃO DE GARÇONS E ENTREGADORES ---
         function renderWaitersList() {
             if (!currentUser || currentUser.role !== 'store') return;
             const s = db.stores[currentUser.storeId];
@@ -1999,6 +2150,149 @@
             }
         }
 
+        function renderDeliveryTeamList() {
+            if (!currentUser || currentUser.role !== 'store') return;
+            const s = db.stores[currentUser.storeId];
+            const grid = document.getElementById('deliveryTeamGrid');
+            const guys = s.deliveryGuys || {};
+            const keys = Object.keys(guys);
+
+            if (keys.length === 0) { grid.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">Nenhum entregador cadastrado.</div>`; return; }
+
+            grid.innerHTML = keys.map(k => {
+                const g = guys[k];
+                return `
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm">${g.name}</h4>
+                            <p class="text-xs text-slate-500">Usuário: ${k}</p>
+                        </div>
+                        <button onclick="deleteDeliveryGuy('${k}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openDeliveryTeamModal() { document.getElementById('deliveryTeamModal').classList.remove('hidden'); }
+        function closeDeliveryTeamModal() { document.getElementById('deliveryTeamModal').classList.add('hidden'); }
+
+        async function saveNewDeliveryGuy() {
+            const name = document.getElementById('regDeliveryName').value.trim();
+            const user = document.getElementById('regDeliveryUser').value.trim().toLowerCase();
+            const pass = document.getElementById('regDeliveryPass').value.trim();
+            if (!name || !user || !pass) { alert('Preencha todos os campos.'); return; }
+
+            const s = db.stores[currentUser.storeId];
+            if (!s.deliveryGuys) s.deliveryGuys = {};
+            s.deliveryGuys[user] = { name, pass };
+
+            await saveDb();
+            closeDeliveryTeamModal();
+            renderDeliveryTeamList();
+            showToast('Entregador Cadastrado!', `${name} adicionado.`);
+        }
+
+        async function deleteDeliveryGuy(userKey) {
+            if (confirm('Remover entregador?')) {
+                const s = db.stores[currentUser.storeId];
+                delete s.deliveryGuys[userKey];
+                await saveDb();
+                renderDeliveryTeamList();
+            }
+        }
+
+        // --- PAINEL DO ENTREGADOR (MOTOBOY) ---
+        function renderDeliveryPanel() {
+            const storeId = currentUser.storeId;
+            const s = db.stores[storeId];
+            const orders = s.orders || [];
+            const myOrders = orders.filter(o => o.deliveryGuy === currentUser.name && o.status !== 'concluidos');
+            const container = document.getElementById('deliveryOrdersList');
+            if (!container) return;
+
+            if (myOrders.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 text-sm bg-white rounded-2xl border border-slate-200">Nenhuma entrega atribuída a você no momento.</div>`;
+                return;
+            }
+
+            container.innerHTML = myOrders.map(o => {
+                const payName = o.paymentMethod === 'pix' ? 'PIX' : (o.paymentMethod === 'cartao' ? 'Cartão' : 'Dinheiro');
+                const changeText = o.changeAmount ? ` (Troco R$ ${o.changeAmount})` : '';
+                return `
+                    <div class="bg-white p-5 rounded-2xl border border-purple-100 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="font-black text-slate-900 text-sm">Pedido #${o.id}</span>
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-800">${o.status === 'entrega' ? 'Saiu p/ Entrega' : o.status}</span>
+                        </div>
+                        <div class="text-xs text-slate-600 space-y-1 border-t border-b border-slate-100 py-2">
+                            <p class="font-bold text-slate-900"><i class="fa-solid fa-user text-primary"></i> Cliente: ${o.clientName} (${o.clientPhone})</p>
+                            <p><i class="fa-solid fa-location-dot text-red-500"></i> Endereço: <b>${o.address}</b></p>
+                            <p><i class="fa-solid fa-wallet text-emerald-600"></i> Pagamento: <b>${payName}</b>${changeText}</p>
+                            <div class="pt-1">
+                                ${o.items.map(i => `<p>${i.qty}x ${i.name} ${i.obs ? `(${i.obs})` : ''}</p>`).join('')}
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="font-black text-primary text-sm">Total: R$ ${o.total.toFixed(2)}</span>
+                            <div class="flex gap-2">
+                                <button onclick="openChatModal('${storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
+                                </button>
+                                <button onclick="deliveryCompleteOrder('${storeId}', ${o.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-check"></i> Entregue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function deliveryCompleteOrder(storeId, orderId) {
+            if (confirm('Marcar este pedido como entregue/concluído?')) {
+                const s = db.stores[storeId];
+                const order = s.orders.find(o => o.id === orderId);
+                if (order) {
+                    order.status = 'concluidos';
+                    await saveDb();
+                    renderDeliveryPanel();
+                    showToast('Entrega Concluída!', `Pedido #${orderId} finalizado.`);
+                }
+            }
+        }
+
+        function openAssignDeliveryModal(orderId) {
+            const s = db.stores[currentUser.storeId];
+            const select = document.getElementById('assignDeliverySelect');
+            const guys = s.deliveryGuys || {};
+            const keys = Object.keys(guys);
+
+            if (keys.length === 0) { alert('Cadastre ao menos um entregador na aba Entregadores primeiro.'); return; }
+
+            select.innerHTML = keys.map(k => `<option value="${guys[k].name}">${guys[k].name}</option>`).join('');
+            document.getElementById('assignOrderId').value = orderId;
+            document.getElementById('assignDeliveryModal').classList.remove('hidden');
+        }
+
+        function closeAssignDeliveryModal() { document.getElementById('assignDeliveryModal').classList.add('hidden'); }
+
+        async function confirmAssignDelivery() {
+            const orderId = parseInt(document.getElementById('assignOrderId').value);
+            const deliveryGuyName = document.getElementById('assignDeliverySelect').value;
+            const s = db.stores[currentUser.storeId];
+            const order = s.orders.find(o => o.id === orderId);
+
+            if (order) {
+                order.deliveryGuy = deliveryGuyName;
+                order.status = 'entrega';
+                printOrderTicket(currentUser.storeId, orderId);
+                await saveDb();
+                closeAssignDeliveryModal();
+                renderKanban();
+                showToast('Pedido Despachado!', `Atribuído a ${deliveryGuyName}.`);
+            }
+        }
+
         function renderKanban() {
             const s = db.stores[currentUser.storeId];
             const orders = s.orders || [];
@@ -2031,6 +2325,7 @@
                         <div class="flex justify-between items-center"><span class="font-extrabold text-slate-900 text-xs">#${o.id} • ${o.clientName}</span><span class="text-[10px] text-slate-400">${o.time}</span></div>
                         <div class="text-[11px] text-slate-600 space-y-0.5 border-t border-b border-slate-100 py-1.5">
                             ${o.items.map(i => `<p><b>${i.qty}x</b> ${i.name} ${i.obs ? `(${i.obs})` : ''}</p>`).join('')}
+                            ${o.deliveryGuy ? `<p class="text-[11px] text-purple-700 font-bold pt-1"><i class="fa-solid fa-motorcycle"></i> ${o.deliveryGuy}</p>` : ''}
                         </div>
                         <div class="text-xs text-slate-700 space-y-0.5">
                             <p class="font-semibold">Endereço: ${o.address}</p>
@@ -2051,7 +2346,7 @@
 
         function getKanbanActionButtons(orderId, status) {
             if (status === 'novos') return `<button onclick="advanceOrderStatus(${orderId}, 'preparo')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-check"></i> Aceitar Pedido & Imprimir</button>`;
-            if (status === 'preparo') return `<button onclick="advanceOrderStatus(${orderId}, 'entrega')" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">Despachar Entrega</button>`;
+            if (status === 'preparo') return `<button onclick="openAssignDeliveryModal(${orderId})" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-motorcycle"></i> Direcionar Entregador</button>`;
             if (status === 'entrega') return `<button onclick="advanceOrderStatus(${orderId}, 'concluidos')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">Concluir Pedido</button>`;
             return '';
         }
@@ -2113,7 +2408,7 @@
                 pass, name, category: category || 'Geral',
                 logo: logo || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
                 time: time || '30-50 min', deliveryFee: fee, minOrder: min, isOpen: true,
-                menu: [], orders: [], tables: {}, waiters: {}, salesHistory: []
+                menu: [], orders: [], tables: {}, waiters: {}, deliveryGuys: {}, salesHistory: []
             };
 
             await saveDb();
