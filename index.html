@@ -1776,35 +1776,42 @@
         }
 
         async function updateMapPosition() {
-            if (!activeMapOrderInfo) return;
-            const { storeId, orderId } = activeMapOrderInfo;
-            
-            const storeObj = db.stores[storeId];
-            if (!storeObj) return;
-            const order = (storeObj.orders || []).find(o => o.id === orderId);
+    if (!activeMapOrderInfo) return;
+    const { storeId, orderId } = activeMapOrderInfo;
+    
+    const storeObj = db.stores[storeId];
+    if (!storeObj) return;
+    const order = (storeObj.orders || []).find(o => o.id === orderId);
 
-            if (!order || order.status !== 'entrega') {
-                document.getElementById('mapStatusText').innerText = 'Entrega concluída ou encerrada!';
-                clearInterval(mapInterval);
-                return;
+    // Se o pedido foi concluído ou cancelado, fecha o mapa automaticamente!
+    if (!order || order.status !== 'entrega') {
+        document.getElementById('mapStatusText').innerText = 'Entrega concluída pelo entregador!';
+        setTimeout(() => {
+            closeLiveMapModal();
+            showToast('Entrega Finalizada', 'O pedido foi entregue com sucesso!');
+            if (currentUser && currentUser.role === 'client') {
+                openClientOrdersModal(); // Atualiza a lista de pedidos do cliente
             }
+        }, 1500);
+        return;
+    }
 
-            if (order.lat && order.lng) {
-                const latLng = [order.lat, order.lng];
-                document.getElementById('mapStatusText').innerText = `Entregador em movimento (${new Date().toLocaleTimeString()})`;
+    if (order.lat && order.lng) {
+        const latLng = [order.lat, order.lng];
+        document.getElementById('mapStatusText').innerText = `Entregador em movimento (${new Date().toLocaleTimeString()})`;
 
-                if (!motoboyMarker) {
-                    motoboyMarker = L.marker(latLng).addTo(leafletMap)
-                        .bindPopup('<b>Entregador a caminho!</b>').openPopup();
-                    leafletMap.setView(latLng, 16);
-                } else {
-                    motoboyMarker.setLatLng(latLng);
-                    leafletMap.panTo(latLng);
-                }
-            } else {
-                document.getElementById('mapStatusText').innerText = 'Aguardando o entregador iniciar o trajeto...';
-            }
+        if (!motoboyMarker) {
+            motoboyMarker = L.marker(latLng).addTo(leafletMap)
+                .bindPopup('<b>Entregador a caminho!</b>').openPopup();
+            leafletMap.setView(latLng, 16);
+        } else {
+            motoboyMarker.setLatLng(latLng);
+            leafletMap.panTo(latLng);
         }
+    } else {
+        document.getElementById('mapStatusText').innerText = 'Aguardando o sinal de GPS do entregador...';
+    }
+}
 
         // --- CHAT AO VIVO TRIDIRECIONAL ---
         function openChatModal(storeId, orderId) {
@@ -2384,19 +2391,35 @@
         }
 
         async function deliveryCompleteOrder(storeId, orderId) {
-            if (confirm('Marcar este pedido como entregue/concluído?')) {
-                const s = db.stores[storeId];
-                const order = s.orders.find(o => o.id === orderId);
-                if (order) {
-                    order.status = 'concluidos';
-                    order.lat = null;
-                    order.lng = null;
-                    await saveDb();
-                    renderDeliveryPanel();
-                    showToast('Entrega Concluída!', `Pedido #${orderId} finalizado.`);
-                }
+    if (confirm('Marcar este pedido como entregue/concluído?')) {
+        try {
+            // Busca o estado mais recente do servidor para evitar conflito
+            const res = await fetch('/api/db', { cache: 'no-store' });
+            const serverDb = await res.json();
+            const storeObj = serverDb.stores[storeId];
+            const order = (storeObj.orders || []).find(o => o.id === orderId);
+
+            if (order) {
+                order.status = 'concluidos';
+                order.lat = null;
+                order.lng = null;
+                
+                // Salva no servidor
+                await fetch('/api/db', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serverDb)
+                });
+
+                db = serverDb;
+                renderDeliveryPanel();
+                showToast('Entrega Concluída!', `Pedido #${orderId} finalizado com sucesso.`);
             }
+        } catch (e) {
+            console.error('Erro ao concluir entrega:', e);
         }
+    }
+}
 
         function openAssignDeliveryModal(orderId) {
             const s = db.stores[currentUser.storeId];
