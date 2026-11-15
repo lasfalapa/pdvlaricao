@@ -14,6 +14,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -76,7 +78,7 @@
                     <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                         Larica<span class="text-primary">Online</span>
                         <span id="connectionStatusBadge" class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> ONLINE
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> NUVEM ATIVA
                         </span>
                     </h1>
                     <p class="text-xs text-slate-400" id="headerSubtitle">Plataforma ERP & Delivery Multi-lojas</p>
@@ -104,7 +106,7 @@
                     <i class="fa-solid fa-burger"></i>
                 </div>
                 <h2 class="text-2xl font-black text-slate-900 tracking-tight">Larica<span class="text-primary">Online</span></h2>
-                <p class="text-xs text-slate-500 mt-1">Sistema Integrado na Nuvem (Render)</p>
+                <p class="text-xs text-slate-500 mt-1">Sistema Integrado com Banco na Nuvem</p>
             </div>
 
             <div class="bg-slate-100 p-1 rounded-2xl grid grid-cols-4 gap-1 mb-6 text-[11px]">
@@ -979,14 +981,22 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE LÓGICA OTIMIZADA COM SERVICE WORKER INTEGRADO -->
+    <!-- SCRIPT INTEGRADO COM SUPABASE (NUVEM GRATUITA E PERMANENTE) -->
     <script>
+        // =========================================================================
+        // INSIRA AQUI AS SUAS CREDENCIAIS DO SUPABASE:
+        const SUPABASE_URL = 'https://gzcrucufmxqmzdqnecov.supabase.co/rest/v1/';
+        const SUPABASE_ANON_KEY = 'sb_publishable_rYcvVIv5D7q_CbefVksCWw_yiom3Cux';
+        // =========================================================================
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         // REGISTRO DO SERVICE WORKER PARA SUPORTE OFFLINE / PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Service Worker registrado com sucesso:', reg.scope))
-                    .catch(err => console.log('Falha ao registrar o Service Worker:', err));
+                    .then(reg => console.log('Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('Falha SW:', err));
             });
         }
 
@@ -1019,14 +1029,22 @@
 
         async function loadInitialDbFromServer() {
             try {
-                const res = await fetch('/api/db', { cache: 'no-store' });
-                const text = await res.text();
-                if (text && text !== 'null' && text.trim().startsWith('{')) {
-                    const parsed = JSON.parse(text);
-                    if (parsed.stores) db = parsed;
-                    lastKnownSnapshot = text;
+                const { data, error } = await supabaseClient
+                    .from('larica_db')
+                    .select('data')
+                    .eq('id', 1)
+                    .single();
+
+                if (!error && data && data.data && data.data.stores) {
+                    db = data.data;
+                    lastKnownSnapshot = JSON.stringify(db);
+                } else {
+                    // Se o banco no Supabase estiver vazio, inicializa com os dados padrão
+                    await saveDb();
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('Erro ao carregar do Supabase:', e);
+            }
             checkAuthState();
         }
 
@@ -1035,12 +1053,12 @@
             const serialized = JSON.stringify(db);
             lastKnownSnapshot = serialized;
             try {
-                await fetch('/api/db', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: serialized
-                });
-            } catch (e) {}
+                await supabaseClient
+                    .from('larica_db')
+                    .upsert({ id: 1, data: db });
+            } catch (e) {
+                console.error('Erro ao salvar no Supabase:', e);
+            }
             isSaving = false;
         }
 
@@ -1172,7 +1190,7 @@
             }
         }
 
-        // SINCRONIZAÇÃO EM TEMPO REAL ROBUSTA
+        // SINCRONIZAÇÃO EM TEMPO REAL COM SUPABASE
         function applyServerUpdates(newDb) {
             if (!newDb || !newDb.stores) return;
             const oldDbString = JSON.stringify(db);
@@ -1229,13 +1247,17 @@
         setInterval(async () => {
             if (isSaving) return;
             try {
-                const res = await fetch('/api/db', { cache: 'no-store' });
-                const text = await res.text();
-                if (text && text !== 'null' && text.trim().startsWith('{')) {
-                    applyServerUpdates(JSON.parse(text));
+                const { data, error } = await supabaseClient
+                    .from('larica_db')
+                    .select('data')
+                    .eq('id', 1)
+                    .single();
+
+                if (!error && data && data.data && data.data.stores) {
+                    applyServerUpdates(data.data);
                 }
             } catch (e) {}
-        }, 1500);
+        }, 2000);
 
         window.onload = () => { loadInitialDbFromServer(); populateSelects(); };
 
@@ -1613,9 +1635,8 @@
             };
 
             try {
-                const res = await fetch('/api/db', { cache: 'no-store' });
-                const text = await res.text();
-                if (text && text !== 'null' && text.trim().startsWith('{')) db = JSON.parse(text);
+                const { data, error } = await supabaseClient.from('larica_db').select('data').eq('id', 1).single();
+                if (!error && data && data.data && data.data.stores) db = data.data;
             } catch (e) {}
 
             if (!db.stores[selectedStoreId].orders) db.stores[selectedStoreId].orders = [];
@@ -1661,23 +1682,25 @@
                         ${o.items.map(i => `<p>${i.qty}x ${i.name} — R$ ${i.total.toFixed(2)}</p>`).join('')}
                         ${o.deliveryGuy ? `<p class="text-[11px] text-purple-700 font-bold pt-1"><i class="fa-solid fa-motorcycle"></i> Entregador: ${o.deliveryGuy}</p>` : ''}
                     </div>
-                    <div class="flex justify-between items-center text-xs pt-1">
+                    <div class="flex flex-wrap justify-between items-center gap-2 text-xs pt-1">
                         <span class="font-bold text-slate-900">Total: R$ ${o.total.toFixed(2)}</span>
-                        <button onclick="openChatModal('${o.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
-                            <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="openChatModal('${o.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- CHAT AO VIVO TRIDIRECIONAL (Loja, Cliente, Entregador) ---
+        // --- CHAT AO VIVO TRIDIRECIONAL ---
         function openChatModal(storeId, orderId) {
             currentChatStoreId = storeId;
             currentChatOrderId = orderId;
             const storeObj = db.stores[storeId];
             if (!storeObj) return;
-            const order = (storeObj.orders || []).find(o => o.id === orderId);
+            const order = (storeObj.orders || []).find(o => o.id == orderId);
             if (!order) return;
 
             document.getElementById('chatModalTitle').innerText = `Atendimento Pedido #${order.id} (${order.clientName})`;
@@ -1695,7 +1718,7 @@
             if (!currentChatStoreId || !currentChatOrderId) return;
             const storeObj = db.stores[currentChatStoreId];
             if (!storeObj) return;
-            const order = (storeObj.orders || []).find(o => o.id === currentChatOrderId);
+            const order = (storeObj.orders || []).find(o => o.id == currentChatOrderId);
             if (!order) return;
 
             const container = document.getElementById('chatMessagesContainer');
@@ -1725,13 +1748,12 @@
             if (!text || !currentChatOrderId || !currentChatStoreId) return;
 
             try {
-                const res = await fetch('/api/db', { cache: 'no-store' });
-                const serverText = await res.text();
-                if (serverText && serverText !== 'null' && serverText.trim().startsWith('{')) db = JSON.parse(serverText);
+                const { data, error } = await supabaseClient.from('larica_db').select('data').eq('id', 1).single();
+                if (!error && data && data.data && data.data.stores) db = data.data;
             } catch (e) {}
 
             const storeObj = db.stores[currentChatStoreId];
-            const order = (storeObj.orders || []).find(o => o.id === currentChatOrderId);
+            const order = (storeObj.orders || []).find(o => o.id == currentChatOrderId);
             if (!order) return;
 
             if (!order.messages) order.messages = [];
@@ -2022,7 +2044,7 @@
             showToast('Venda Concluída!', `Cupom gerado com sucesso.`);
         }
 
-        // IMPRESSÃO TÉRMICA PADRÃO NOTINHA FISCAL (CORRIGIDA)
+        // IMPRESSÃO TÉRMICA PADRÃO NOTINHA FISCAL
         function printReceipt(title, storeName, items, total, isKitchen = false, waiterName = '', orderDetails = null) {
             const printArea = document.getElementById('printArea');
             let paymentInfo = '';
@@ -2056,7 +2078,7 @@
                         ${orderDetails ? `<div style="margin-bottom: 2px;">Subtotal: R$ ${orderDetails.subtotal.toFixed(2)}</div><div style="margin-bottom: 2px;">Taxa Entrega: R$ ${orderDetails.fee.toFixed(2)}</div>` : ''}
                         ${!isKitchen ? `<div style="font-size: 14px; font-weight: bold; text-align: right; margin-top: 5px;">TOTAL: R$ ${total.toFixed(2)}</div>` : ''}
                     </div>
-                    <div style="text-align: center; margin-top: 12px; font-size: 10px; border-top: 1px dotted black; pt: 5px;">LaricaOnline - ERP Multi-lojas</div>
+                    <div style="text-align: center; margin-top: 12px; font-size: 10px; border-top: 1px dotted black; padding-top: 5px;">LaricaOnline - ERP Multi-lojas</div>
                 </div>
             `;
             setTimeout(() => {
@@ -2067,7 +2089,7 @@
         function printOrderTicket(storeId, orderId) {
             const s = db.stores[storeId];
             if (!s || !s.orders) return;
-            const order = s.orders.find(o => o.id === orderId);
+            const order = s.orders.find(o => o.id == orderId);
             if (!order) return;
             printReceipt(`PEDIDO #${order.id}`, s.name, order.items, order.total, false, '', order);
         }
@@ -2235,10 +2257,10 @@
                         <div class="flex items-center justify-between pt-1">
                             <span class="font-black text-primary text-sm">Total: R$ ${o.total.toFixed(2)}</span>
                             <div class="flex gap-2">
-                                <button onclick="openChatModal('${storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
+                                <button onclick="openChatModal('${storeId}', '${o.id}')" class="bg-orange-50 hover:bg-orange-100 text-primary font-bold px-3 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
                                     <i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})
                                 </button>
-                                <button onclick="deliveryCompleteOrder('${storeId}', ${o.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
+                                <button onclick="deliveryCompleteOrder('${storeId}', '${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition flex items-center gap-1 cursor-pointer">
                                     <i class="fa-solid fa-check"></i> Entregue
                                 </button>
                             </div>
@@ -2249,15 +2271,31 @@
         }
 
         async function deliveryCompleteOrder(storeId, orderId) {
-            if (confirm('Marcar este pedido como entregue/concluído?')) {
-                const s = db.stores[storeId];
-                const order = s.orders.find(o => o.id === orderId);
-                if (order) {
-                    order.status = 'concluidos';
-                    await saveDb();
-                    renderDeliveryPanel();
-                    showToast('Entrega Concluída!', `Pedido #${orderId} finalizado.`);
+            if (!confirm('Marcar este pedido como entregue/concluído?')) return;
+
+            isSaving = true;
+            try {
+                const { data, error } = await supabaseClient.from('larica_db').select('data').eq('id', 1).single();
+                let serverDb = (!error && data && data.data && data.data.stores) ? data.data : db;
+
+                const storeObj = serverDb.stores[storeId];
+                if (storeObj && storeObj.orders) {
+                    const order = storeObj.orders.find(o => o.id == orderId);
+                    if (order) {
+                        order.status = 'concluidos';
+                        await supabaseClient.from('larica_db').upsert({ id: 1, data: serverDb });
+
+                        db = serverDb;
+                        lastKnownSnapshot = JSON.stringify(db);
+                        renderDeliveryPanel();
+                        showToast('Entrega Concluída!', `Pedido #${orderId} finalizado com sucesso.`);
+                    }
                 }
+            } catch (e) {
+                console.error('Erro ao concluir entrega:', e);
+                alert('Erro de conexão ao finalizar entrega. Tente novamente.');
+            } finally {
+                isSaving = false;
             }
         }
 
@@ -2280,7 +2318,7 @@
             const orderId = parseInt(document.getElementById('assignOrderId').value);
             const deliveryGuyName = document.getElementById('assignDeliverySelect').value;
             const s = db.stores[currentUser.storeId];
-            const order = s.orders.find(o => o.id === orderId);
+            const order = s.orders.find(o => o.id == orderId);
 
             if (order) {
                 order.deliveryGuy = deliveryGuyName;
@@ -2333,8 +2371,8 @@
                             <p class="font-black text-primary mt-1">Total: R$ ${o.total.toFixed(2)}</p>
                         </div>
                         <div class="flex items-center gap-1.5 pt-1 border-t border-slate-100">
-                            <button onclick="printOrderTicket('${currentUser.storeId}', ${o.id})" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer" title="Imprimir Comanda"><i class="fa-solid fa-print"></i></button>
-                            <button onclick="openChatModal('${currentUser.storeId}', ${o.id})" class="bg-orange-50 hover:bg-orange-100 text-primary px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1" title="Chamar Cliente"><i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})</button>
+                            <button onclick="printOrderTicket('${currentUser.storeId}', '${o.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer" title="Imprimir Comanda"><i class="fa-solid fa-print"></i></button>
+                            <button onclick="openChatModal('${currentUser.storeId}', '${o.id}')" class="bg-orange-50 hover:bg-orange-100 text-primary px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1" title="Chamar Cliente"><i class="fa-solid fa-comments"></i> Chat (${o.messages ? o.messages.length : 0})</button>
                         </div>
                         <div class="pt-1">
                             ${getKanbanActionButtons(o.id, statusKey)}
@@ -2353,7 +2391,7 @@
 
         async function advanceOrderStatus(orderId, nextStatus) {
             const s = db.stores[currentUser.storeId];
-            const order = s.orders.find(o => o.id === orderId);
+            const order = s.orders.find(o => o.id == orderId);
             if (order) {
                 order.status = nextStatus;
                 if (nextStatus === 'preparo') {
